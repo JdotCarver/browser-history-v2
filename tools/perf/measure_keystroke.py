@@ -170,6 +170,46 @@ def result_count(output: str) -> int:
     return -1
 
 
+# Measured inside one already-imported process. Process-to-process comparison
+# cannot resolve a few milliseconds: the spread between two identical runs has
+# been seen at 20 ms, which is larger than most changes worth making.
+IN_PROCESS_PROBE = """
+import json, statistics, time
+from main import BrowserHistory
+
+def median(values):
+    return round(statistics.median(values), 3)
+
+plugin = BrowserHistory()
+plugin._ensure_ready()
+
+phases = {"construct": [], "ensure_ready": [], "query": [], "query_favicons": [], "menu": []}
+for _ in range(7):
+    started = time.perf_counter()
+    BrowserHistory()
+    phases["construct"].append((time.perf_counter() - started) * 1000)
+
+    fresh = BrowserHistory()
+    started = time.perf_counter()
+    fresh._ensure_ready()
+    phases["ensure_ready"].append((time.perf_counter() - started) * 1000)
+
+    for key, favicons in (("query", False), ("query_favicons", True)):
+        plugin.show_favicons = favicons
+        plugin.items = []
+        started = time.perf_counter()
+        plugin.query("")
+        phases[key].append((time.perf_counter() - started) * 1000)
+
+    plugin.items = []
+    started = time.perf_counter()
+    plugin.context_menu(["A title", "https://example.com/x"])
+    phases["menu"].append((time.perf_counter() - started) * 1000)
+
+print("PROBE_JSON " + json.dumps({key: median(values) for key, values in phases.items()}))
+"""
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repeats", type=int, default=7)
@@ -277,6 +317,25 @@ def main(argv=None) -> int:
             "description": "the context menu on one result: two entries, no history",
         }
 
+        # What each part costs once the process is already running.
+        probe = subprocess.run(
+            [sys.executable, "-c", IN_PROCESS_PROBE],
+            cwd=plugin_dir,
+            env=dict(
+                environment,
+                PYTHONPATH=os.pathsep.join(
+                    [str(lib_dir), str(plugin_dir), str(plugin_dir / "plugin")]
+                ),
+            ),
+            capture_output=True,
+            text=True,
+        )
+        for line in probe.stdout.splitlines():
+            if line.startswith("PROBE_JSON "):
+                report["phases"] = json.loads(line[len("PROBE_JSON ") :])
+        if not report.get("phases") and probe.stderr:
+            report["phases_error"] = probe.stderr.strip().splitlines()[-1:]
+
         if not args.json:
             print(f"machine: {report['machine']}")
             print(f"plugin: {plugin_dir.relative_to(work_dir)}")
@@ -295,6 +354,21 @@ def main(argv=None) -> int:
             print()
             for key, data in report["keystrokes"].items():
                 print(f"  {key:<11} {data['description']}")
+
+            if report.get("phases"):
+                print()
+                print("inside one running process (no start-up, no import):")
+                labels = {
+                    "construct": "BrowserHistory()",
+                    "ensure_ready": "discovery + cache upkeep",
+                    "query": "one query, no favicons",
+                    "query_favicons": "one query, with favicons",
+                    "menu": "the context menu",
+                }
+                for key, milliseconds in report["phases"].items():
+                    print(f"  {labels.get(key, key):<32}{milliseconds:>8.3f} ms")
+            elif report.get("phases_error"):
+                print("in-process probe failed:", report["phases_error"][0])
             remaining = {
                 key: round(data["ms"] - report["steps"]["interpreter+flox+plugin"], 1)
                 for key, data in report["keystrokes"].items()
