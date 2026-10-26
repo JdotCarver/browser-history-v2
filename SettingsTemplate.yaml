@@ -48,6 +48,43 @@ body:
       label: UI Results Limit
       defaultValue: "500"
       description: Maximum number of final results to display in Flow Launcher.
+  - type: dropdown
+    attributes:
+      name: date_display
+      label: Date Display
+      defaultValue: Absolute
+      description: Show when a page was last visited as a fixed date, or as an age ("Yesterday at 19:43").
+      options:
+        - Absolute
+        - Relative
+  - type: dropdown
+    attributes:
+      name: time_format
+      label: Time Format
+      defaultValue: 12-hour
+      description: The clock used for times in results. 'System' follows your Windows regional settings.
+      options:
+        - 12-hour
+        - 24-hour
+        - System
+  - type: dropdown
+    attributes:
+      name: url_display
+      label: URL Display
+      defaultValue: Full URL
+      description: Show the full address of each result, or just the site it is on (e.g. youtube.com).
+      options:
+        - Full URL
+        - Domain only
+  - type: dropdown
+    attributes:
+      name: subtitle_layout
+      label: Subtitle Layout
+      defaultValue: Bracketed
+      description: How the date and address are separated underneath each result.
+      options:
+        - Bracketed
+        - Dashed
   - type: textarea
     attributes:
       name: blocked_domains

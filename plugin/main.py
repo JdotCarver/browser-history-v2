@@ -1,11 +1,19 @@
 from flox import Flox, ICON_HISTORY, ICON_BROWSER, ICON_FILE
 import pyperclip
 import browsers
+from formatting import (
+    DATE_ABSOLUTE,
+    LAYOUT_BRACKETED,
+    TIME_12,
+    URL_FULL,
+    format_subtitle,
+)
 from results import newest_unique, read_profiles
 import platform
 import shutil
 import time
 from pathlib import Path
+from datetime import datetime
 
 # Constants
 HISTORY_GLYPH = ""
@@ -13,6 +21,13 @@ CUSTOM_PROFILE = "custom profile"
 
 
 class BrowserHistory(Flox):
+
+    # Display defaults live on the class so that an instance built without
+    # __init__ (the tests do this) still renders exactly like a configured one.
+    date_display = DATE_ABSOLUTE
+    time_format = TIME_12
+    url_display = URL_FULL
+    subtitle_layout = LAYOUT_BRACKETED
 
     def __init__(self):
         super().__init__()
@@ -64,6 +79,13 @@ class BrowserHistory(Flox):
         profile_mode = self.settings.get("profile_search_mode", "Active Profile")
         self.search_all_profiles = profile_mode == "All Profiles"
         self.profile_last_updated = profile_mode == "Active Profile"
+
+        # How results are written. The defaults are the original look, so an
+        # existing settings file (which has none of these keys) is unaffected.
+        self.date_display = self.settings.get("date_display", DATE_ABSOLUTE)
+        self.time_format = self.settings.get("time_format", TIME_12)
+        self.url_display = self.settings.get("url_display", URL_FULL)
+        self.subtitle_layout = self.settings.get("subtitle_layout", LAYOUT_BRACKETED)
 
         blocked_domains_str = self.settings.get("blocked_domains") or ""
         self.blocked_domains = [
@@ -184,6 +206,9 @@ class BrowserHistory(Flox):
 
         try:
             source_items = self._get_combined_history(query)
+            # One clock reading for the whole list: two rows a second apart
+            # must not disagree about whether it is still "today".
+            now = datetime.now()
 
             if getattr(self, "_warnings", None):
                 self.add_item(
@@ -193,11 +218,17 @@ class BrowserHistory(Flox):
                 )
 
             for idx, item in enumerate(source_items):
-                time_str = item.timestamp().strftime("%b %d, %Y %I:%M %p")
-
                 self.add_item(
                     title=item.title,
-                    subtitle=f"[{time_str}] {item.url}",
+                    subtitle=format_subtitle(
+                        item.timestamp(),
+                        item.url,
+                        now=now,
+                        date_display=self.date_display,
+                        time_format=self.time_format,
+                        url_display=self.url_display,
+                        subtitle_layout=self.subtitle_layout,
+                    ),
                     icon=ICON_HISTORY,
                     glyph=HISTORY_GLYPH,
                     method=self.browser_open,

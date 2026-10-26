@@ -14,6 +14,7 @@ import flow_stub  # noqa: E402
 
 flow_stub.install()
 
+import formatting  # noqa: E402
 import main  # noqa: E402
 
 
@@ -121,6 +122,24 @@ class QueryRenderingTests(unittest.TestCase):
         self.assertIn("https://example.com/shared", plugin.items[0]["subtitle"])
         self.assertIn("Jan 01, 2024", plugin.items[0]["subtitle"])
         self.assertEqual(plugin.items[0]["parameters"], ["https://example.com/shared"])
+
+    def test_display_settings_reach_the_subtitle(self):
+        """The four display settings are wired through, not just defined."""
+        plugin = make_plugin()
+        plugin._get_combined_history = lambda query: [
+            FakeItem("Shared", "https://www.example.com/shared?x=1", 300)
+        ]
+        plugin.date_display = formatting.DATE_RELATIVE
+        plugin.time_format = formatting.TIME_24
+        plugin.url_display = formatting.URL_DOMAIN
+        plugin.subtitle_layout = formatting.LAYOUT_DASHED
+
+        plugin.query("term")
+
+        # Dated 2024, so the relative form is the plain date.
+        self.assertEqual(
+            plugin.items[0]["subtitle"], "Jan 01, 2024 - example.com"
+        )
 
     def test_skipped_profiles_are_reported_above_the_results(self):
         plugin = make_plugin()
