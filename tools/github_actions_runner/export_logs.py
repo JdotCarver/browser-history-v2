@@ -16,17 +16,26 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
+# Same directory as this script, which is how it is invoked from the workflow.
+from redact import redact_bytes
+
 LOG_BRANCH = "actions-logs"
 ANSI_CSI_PATTERN = re.compile(rb"\x1b\[[0-?]*[ -/]*[@-~]")
 ANSI_OSC_PATTERN = re.compile(rb"\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)")
 
 
 def normalize_log_bytes(contents: bytes) -> bytes:
-    """Remove terminal control sequences and normalize CRLF without dropping log text."""
+    """Make a job log readable and safe to publish.
+
+    Terminal control sequences are stripped, line endings normalized, and the
+    signed-in account name replaced with `<user>`: these logs are republished to a
+    public branch and a Windows log names the account in nearly every path.
+    """
 
     contents = ANSI_OSC_PATTERN.sub(b"", contents)
     contents = ANSI_CSI_PATTERN.sub(b"", contents)
-    return contents.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    contents = contents.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    return redact_bytes(contents)
 
 
 def run_command(
