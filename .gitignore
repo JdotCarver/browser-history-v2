@@ -120,3 +120,6 @@ flox
 
 .vscode/
 bin/
+
+# GitHub Actions runner logs fetched by tools/github_actions_runner
+.runner-logs/

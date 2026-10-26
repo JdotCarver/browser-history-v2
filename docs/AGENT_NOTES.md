@@ -42,29 +42,67 @@ is strictly behind. Recovery recipes:
 `SettingsTemplate.yaml` keys are user-visible. Do not add, rename, or change the type of a key
 without an agreed shape proposal — a renamed key silently resets the user's configuration.
 
-## 4. Performance baseline (2026-10-26, sandbox, synthetic 200k-row DBs)
+## 4. Performance findings (2026-10-26)
 
-Where the time goes for a single `query()` with 10 profiles (8 Chromium, 2 Firefox):
+Where the time goes for a single `query()` with 10 synthetic profiles (8 Chromium,
+2 Firefox), measured with cProfile:
 
 | stage | cost |
 |---|---|
+| `sqlite3.Cursor.execute` (all profiles) | **95 %+ of total** |
 | `BrowserHistory.__init__` (settings + profile discovery) | ~0.5 ms |
-| `sqlite3.Cursor.execute` (all profiles, serial) | **95 %+ of total** |
-| row → `HistoryItem`, de-dupe, sort, 500 × `strftime` | < 3 ms |
-| copy of one 58 MB history DB (only when it changed) | ~27 ms (Linux tmpfs) |
-| interpreter + `flox` import (Windows, per keystroke) | ~100 ms (fixed floor) |
+| rows -> `HistoryItem`, de-dupe, sort, 500 x `strftime` | < 3 ms |
+| copying one 58 MB history DB (only when it changed) | ~27 ms on Linux tmpfs |
+| interpreter + `flox` import, per keystroke (Windows) | ~100 ms, a fixed floor |
 
-Scenarios, current code, serial (median of 5):
+So the work is entirely about which statements run. Two findings, both measured
+with `tools/perf/bench_queries.py`:
 
-| query | current |
-|---|---|
-| `""` | 187 ms |
-| `"github"` | 364 ms |
-| no matches (`"xqz"`) | 2606 ms |
+1. **A time-ordered index walk cannot stop early when nothing matches.** It then
+   visits every entry of the index. On Firefox that meant a row lookup per
+   *visit* (`1086 ms` on 200k places) because the old query joined
+   `moz_historyvisits`. On Chromium the walk costs a join per entry, which is why
+   it loses to a plain scan even when the term matches: `66 ms` vs `13 ms` for a
+   term that matches nothing, `15 ms` vs `20 ms` for one that matches well. Hence:
+   ladder for Firefox, single scan for Chromium. `history_query.py` records this.
+2. **A sequential table scan has bounded cost.** It is never the fastest plan but
+   it is the only one whose cost is independent of what the search matches, and
+   "nothing matches yet" is the state of the box while the user is still typing.
 
-The zero-match case is the cliff: `ORDER BY <time> DESC LIMIT n` over an index cannot stop early
-when nothing matches, so it walks the whole history doing random row lookups. Typing the first
-letters of a rare word is exactly that state.
+Baseline versus working tree, 2 Chromium + 2 Firefox profiles x 100k URLs,
+medians of 7, on a 2-core sandbox:
+
+| scenario | published | now | speedup |
+|---|---|---|---|
+| empty query | 98 ms | 29 ms | 3.4x |
+| `youtube` | 158 ms | 39 ms | 4.1x |
+| `python sqlite` | 210 ms | 51 ms | 4.1x |
+| `zzqq` (no match) | 136 ms | 79 ms | 1.7x |
+
+Chromium only (the setup on the owner's machine) is flatter: 1.1x on the empty
+query, 1.6x on a common term, 1.7x on no-match. Most of what is left there is
+interpreter start-up, not queries.
+
+Reproduce with:
+
+```bash
+python tools/perf/bench_queries.py --profiles 2 --firefox 2 --urls 100000
+python tools/perf/bench_queries.py --distribution flat      # pessimistic fixture
+```
+
+The benchmark runs each side in its own subprocess (as Flow Launcher does) and
+extracts the published `plugin/browsers.py` from git, so the comparison is
+against the real published code rather than a copy of it.
+
+## 4b. Rules we now hold the code to
+
+- A plan that can be slower than what it replaces is not an optimisation. Every
+  ladder rung is bounded by one full-history scan plus the windows it walked.
+- Measure before enabling a ladder for a new engine; the Chromium comment exists
+  so nobody re-enables it on intuition.
+- Do not commit history content. Benchmarks use synthetic databases; any
+  diagnostic against the real machine must print timings, sizes and index names
+  only.
 
 ## 5. Measurement discipline
 
