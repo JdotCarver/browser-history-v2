@@ -1,0 +1,34 @@
+{
+  "capture_note": "Status is captured while Export logs is still in progress; use the final workflow conclusion for that job's result.",
+  "conclusion": null,
+  "event": "push",
+  "head_branch": "arena/b80febd6-browser-history-v2",
+  "head_sha": "151ed4eff1b9cc78ac2beaf91b883694e162103a",
+  "id": 40366137758,
+  "jobs": [
+    {
+      "conclusion": "success",
+      "id": 121724232130,
+      "name": "Select runner",
+      "status": "completed",
+      "url": "https://github.com/JdotCarver/browser-history-v2/actions/runs/40366137758/job/121724232130"
+    },
+    {
+      "conclusion": "success",
+      "id": 121724312329,
+      "name": "Early Exit and the Doubled Menu",
+      "status": "completed",
+      "url": "https://github.com/JdotCarver/browser-history-v2/actions/runs/40366137758/job/121724312329"
+    },
+    {
+      "conclusion": null,
+      "id": 121724623901,
+      "name": "Export logs",
+      "status": "in_progress",
+      "url": "https://github.com/JdotCarver/browser-history-v2/actions/runs/40366137758/job/121724623901"
+    }
+  ],
+  "name": "Runner request",
+  "status": "in_progress",
+  "url": "https://github.com/JdotCarver/browser-history-v2/actions/runs/40366137758"
+}
