@@ -88,6 +88,9 @@ def main(argv=None) -> int:
         print(f"No trace was written to {trace_path}.", file=sys.stderr)
         return 1
 
+    if os.environ.get("BH_CREATED_ERROR"):
+        print(f"process creation time unavailable: {os.environ['BH_CREATED_ERROR']}")
+
     completed = subprocess.run(
         [sys.executable, str(TOOLS / "read_trace.py"), str(trace_path)],
         capture_output=True,

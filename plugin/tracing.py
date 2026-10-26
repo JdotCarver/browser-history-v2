@@ -55,6 +55,16 @@ def _process_creation_epoch() -> Optional[float]:
         from ctypes import wintypes
 
         kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        # Without these the default 32-bit restype truncates the pseudo-handle
+        # on a 64-bit process, and the call fails with an invalid handle.
+        kernel32.GetCurrentProcess.restype = wintypes.HANDLE
+        kernel32.GetProcessTimes.argtypes = [
+            wintypes.HANDLE,
+            ctypes.POINTER(wintypes.FILETIME),
+            ctypes.POINTER(wintypes.FILETIME),
+            ctypes.POINTER(wintypes.FILETIME),
+            ctypes.POINTER(wintypes.FILETIME),
+        ]
         handle = kernel32.GetCurrentProcess()
         created, exited, kernel, user = (wintypes.FILETIME() for _ in range(4))
         ok = kernel32.GetProcessTimes(
@@ -65,10 +75,12 @@ def _process_creation_epoch() -> Optional[float]:
             ctypes.byref(user),
         )
         if not ok:
+            os.environ["BH_CREATED_ERROR"] = f"GetProcessTimes failed ({ctypes.get_last_error()})"
             return None
         ticks = (created.dwHighDateTime << 32) | created.dwLowDateTime
         return ticks / 10_000_000 - 116_444_736_00  # 1601 -> 1970
-    except Exception:
+    except Exception as error:  # noqa: BLE001 - any failure here is non-fatal
+        os.environ["BH_CREATED_ERROR"] = f"{type(error).__name__}: {error}"
         return None
 
 
