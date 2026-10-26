@@ -95,7 +95,9 @@ jobs:
 
       - name: Environment
         run: |
-          & $env:PYTHON -c "import sqlite3, platform, sys; print('python', sys.version.split()[0], '| sqlite', sqlite3.sqlite_version, '|', platform.platform())"
+          # Family and architecture only: the exact build is a finding aid for
+          # an attacker, and these logs are public. See tools/machine_label.py.
+          & $env:PYTHON -c "import sqlite3, sys; sys.path.insert(0, 'tools'); from machine_label import describe_machine; print('python', sys.version.split()[0], '| sqlite', sqlite3.sqlite_version, '|', describe_machine())"
 
       - name: Runner receipt
         run: |

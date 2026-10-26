@@ -38,6 +38,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from diagnose import pick_search_term  # noqa: E402
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+import machine_label  # noqa: E402
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 PLUGIN_NAME = "browser-history-v2"
 MANIFEST = json.loads((REPO_ROOT / "plugin.json").read_text(encoding="utf-8"))
@@ -229,8 +232,8 @@ def main(argv=None) -> int:
 
     work_dir = Path(tempfile.mkdtemp(prefix="bh-keystroke-"))
     report: dict = {"machine": {
-        "platform": platform.platform(),
-        "python": platform.python_version(),
+        "platform": machine_label.describe_machine(),
+        "python": machine_label.describe_python(),
         "cores": os.cpu_count(),
     }, "steps": {}, "keystrokes": {}}
 

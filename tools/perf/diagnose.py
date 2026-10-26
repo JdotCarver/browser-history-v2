@@ -32,6 +32,9 @@ import time
 from collections import Counter
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+import machine_label  # noqa: E402
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "plugin"))
 
@@ -215,7 +218,7 @@ def main(argv=None) -> int:
     cache_dir = Path(tempfile.mkdtemp(prefix="bh-diagnose-"))
     report = {
         "machine": {
-            "platform": platform.platform(),
+            "platform": machine_label.describe_machine(),
             "python": platform.python_version(),
             "sqlite": sqlite3.sqlite_version,
             "cores": __import__("os").cpu_count(),

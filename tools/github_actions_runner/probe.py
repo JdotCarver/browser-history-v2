@@ -11,6 +11,9 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+import machine_label  # noqa: E402
+
 from select_runner import load_request
 
 EXPECTED_ENVIRONMENTS = {
@@ -56,7 +59,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "run_id": os.environ.get("GITHUB_RUN_ID", "unknown"),
         "runner_name": os.environ.get("RUNNER_NAME", "unknown"),
         "runner_environment": actual_environment,
-        "operating_system": platform.platform(),
+        "operating_system": machine_label.describe_machine(),
         "architecture": platform.machine(),
         "python_version": platform.python_version(),
     }

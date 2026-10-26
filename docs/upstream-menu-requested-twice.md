@@ -68,5 +68,5 @@ flight), or whichever path is the duplicate could stop calling it.
 ## Environment
 
 - Flow Launcher 2.1.4
-- Windows 10 22H2 (19045), Python 3.13.14
+- Windows 10 (patch level withheld), Python 3.13.14
 - Plugin is JSON-RPC/Python, returning two context-menu entries
