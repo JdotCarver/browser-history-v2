@@ -25,17 +25,20 @@ class Flox:
 
     def add_item(self, title, subtitle="", icon=None, method=None, parameters=None,
                  context=None, glyph=None, **kwargs):
-        self.items.append(
-            {
-                "title": title,
-                "subtitle": subtitle,
-                "icon": icon,
-                "method": method,
-                "parameters": parameters,
-                "context": context,
-                "glyph": glyph,
-            }
-        )
+        entry = {
+            "title": title,
+            "subtitle": subtitle,
+            "icon": icon,
+            "method": method,
+            "parameters": parameters,
+            "context": context,
+            "glyph": glyph,
+        }
+        # The real library copies any extra keyword straight onto the item, which
+        # is how Preview and PreviewVisibility reach Flow.
+        for key, value in kwargs.items():
+            entry[key] = value
+        self.items.append(entry)
 
     def browser_open(self, url):
         """Provided by the real Flox base class."""

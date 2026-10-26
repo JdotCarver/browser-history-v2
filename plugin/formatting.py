@@ -35,6 +35,10 @@ TIME_SYSTEM = "System"
 
 URL_FULL = "Full URL"
 URL_DOMAIN = "Domain only"
+URL_DOMAIN_PATH = "Domain and path"
+
+#: Longer paths are shortened in the middle, so both ends stay visible.
+PATH_LIMIT = 60
 
 LAYOUT_BRACKETED = "Bracketed"
 LAYOUT_DASHED = "Dashed"
@@ -104,24 +108,43 @@ def format_date(
     return moment.strftime("%b %d, %Y")
 
 
-def display_url(url: str, url_display: str = URL_FULL) -> str:
-    """The URL, or just the site it points at."""
-    if url_display != URL_DOMAIN:
-        return url
+def shorten_path(path: str, limit: int = PATH_LIMIT) -> str:
+    """Shorten a long path in the middle: both ends matter to the reader."""
+    if len(path) <= limit:
+        return path
+    keep = (limit - 3) // 2
+    return f"{path[:keep]}...{path[-keep:]}"
 
+
+def _site_and_path(url: str):
+    """(site, path) for a web URL, or None when it does not name a site."""
     try:
         parts = urlsplit(url)
     except ValueError:
+        return None
+    if not parts.netloc or parts.scheme not in WEB_SCHEMES:
+        return None
+    return parts.netloc, parts.path
+
+
+def display_url(url: str, url_display: str = URL_FULL) -> str:
+    """The URL, or just the site, or the site and enough path to identify it."""
+    if url_display not in (URL_DOMAIN, URL_DOMAIN_PATH):
         return url
 
-    if not parts.netloc or parts.scheme not in WEB_SCHEMES:
-        # about:, chrome://, file: -- the 'host' there is not a site name.
+    parts_of_url = _site_and_path(url)
+    if parts_of_url is None:
         return url
-    netloc = parts.netloc
+    netloc, path = parts_of_url
 
     site = netloc.rsplit("@", 1)[-1].lower()  # drop any user:password@
     if site.startswith("www.") and site.count(".") >= 2:
         site = site[4:]
+
+    if url_display == URL_DOMAIN_PATH and path.strip("/"):
+        # The path is what tells two pages on the same site apart -- and it is
+        # a rule, not a table of sites, so it cannot rot.
+        return f"{site}{shorten_path(path.rstrip('/'), max(12, PATH_LIMIT - len(site)))}"
     return site
 
 

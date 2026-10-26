@@ -8,6 +8,7 @@ from formatting import (
     format_subtitle,
 )
 from favicons import FaviconStore
+from preview import build_preview
 from tracing import RequestTrace, process_start_mono as process_entry_mono
 from results import newest_unique, read_profiles
 import os
@@ -328,6 +329,11 @@ class BrowserHistory(Flox):
             for idx, item in enumerate(source_items):
                 icon = icon_paths.get(item.url)
                 self.add_item(
+                    # The details panel shows what the row cannot: the whole
+                    # address, the exact time, and which browser knows it.
+                    Preview=build_preview(
+                        item, now=now, time_format=self.time_format, icon=icon
+                    ),
                     title=item.title,
                     subtitle=format_subtitle(
                         item.timestamp(),

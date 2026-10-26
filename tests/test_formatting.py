@@ -13,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "plugin"))
 
 import formatting  # noqa: E402
 from formatting import (  # noqa: E402
+    URL_DOMAIN_PATH,
     DATE_ABSOLUTE,
     DATE_RELATIVE,
     LAYOUT_BRACKETED,
@@ -196,6 +197,45 @@ class DomainDisplay(unittest.TestCase):
             display_url("https://XN--BCHER-KVA.example/x", URL_DOMAIN),
             "xn--bcher-kva.example",
         )
+
+
+class DomainAndPath(unittest.TestCase):
+    """The middle setting: a site name alone cannot tell two pages apart."""
+
+    def test_the_path_is_kept(self):
+        self.assertEqual(
+            display_url(
+                "https://github.com/JdotCarver/PersonalQMK/actions", URL_DOMAIN_PATH
+            ),
+            "github.com/JdotCarver/PersonalQMK/actions",
+        )
+
+    def test_the_scheme_and_query_are_dropped(self):
+        self.assertEqual(
+            display_url("https://example.com/a/b?q=1#frag", URL_DOMAIN_PATH),
+            "example.com/a/b",
+        )
+
+    def test_a_trailing_slash_is_not_shown(self):
+        self.assertEqual(display_url("https://example.com/a/", URL_DOMAIN_PATH), "example.com/a")
+        self.assertEqual(display_url("https://example.com/", URL_DOMAIN_PATH), "example.com")
+
+    def test_a_long_path_is_shortened_in_the_middle(self):
+        long_url = "https://example.com/" + "/".join(["segment"] * 12)
+        shown = display_url(long_url, URL_DOMAIN_PATH)
+        self.assertLessEqual(len(shown), 60)
+        self.assertIn("...", shown)
+        self.assertTrue(shown.startswith("example.com/segment"))
+        self.assertTrue(shown.endswith("segment"))
+
+    def test_the_site_only_mode_is_unchanged(self):
+        self.assertEqual(
+            display_url("https://github.com/JdotCarver/PersonalQMK", URL_DOMAIN), "github.com"
+        )
+
+    def test_sites_without_a_name_are_left_whole(self):
+        for url in ("chrome://settings/", "file:///C:/notes.txt"):
+            self.assertEqual(display_url(url, URL_DOMAIN_PATH), url)
 
 
 class SubtitleLayout(unittest.TestCase):

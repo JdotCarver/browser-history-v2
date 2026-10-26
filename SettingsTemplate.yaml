@@ -72,10 +72,11 @@ body:
       name: url_display
       label: URL Display
       defaultValue: Full URL
-      description: Show the full address of each result, or just the site it is on (e.g. youtube.com).
+      description: Show the full address of each result, just the site it is on (e.g. youtube.com), or the site and its path (e.g. github.com/JdotCarver/PersonalQMK) so two pages on one site stay distinguishable.
       options:
         - Full URL
         - Domain only
+        - Domain and path
   - type: dropdown
     attributes:
       name: subtitle_layout
