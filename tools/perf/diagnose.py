@@ -72,7 +72,7 @@ def frequent_term(connection, engine, sample_rows: int = 2000) -> tuple[str, int
     a query and reports only the match count.
     """
     column = "title"
-    table = engine.time_index_table or "urls"
+    table = "urls" if engine is CHROMIUM_ENGINE else "moz_places"
     time_column = "last_visit_time" if engine is CHROMIUM_ENGINE else "last_visit_date"
     try:
         rows = connection.execute(
@@ -92,6 +92,25 @@ def frequent_term(connection, engine, sample_rows: int = 2000) -> tuple[str, int
     if not counts:
         return "", 0
     return counts.most_common(1)[0][0], counts.most_common(1)[0][1]
+
+
+def pick_search_term(cache_dir: Path) -> str:
+    """The most frequent word in the largest real profile's recent titles.
+
+    Returns "" when there is no history to draw from. The caller times a search
+    with this word and reports the timing only: the word itself is history
+    content and never leaves the machine.
+    """
+    profiles = discover_profiles(cache_dir)
+    if not profiles:
+        return ""
+    largest = max(profiles, key=lambda browser: Path(browser.database_path).stat().st_size)
+    connection = sqlite3.connect(f"file:{largest._copy_database()}?mode=ro", uri=True)
+    try:
+        term, _occurrences = frequent_term(connection, largest.engine)
+    finally:
+        connection.close()
+    return term
 
 
 def time_call(function, repeats: int = 5):

@@ -105,9 +105,17 @@ jobs:
         run: |
           & $env:PYTHON -m unittest discover -s tests -p "test_*.py" -v
 
+      - name: Runner tool tests
+        run: |
+          & $env:PYTHON -m unittest discover -s tools/github_actions_runner -p "test_*.py" -v
+
       - name: Diagnostic on the real browser histories
         run: |
           & $env:PYTHON tools/perf/diagnose.py
+
+      - name: Per-keystroke measurement
+        run: |
+          & $env:PYTHON tools/perf/measure_keystroke.py
 
       - name: Synthetic A/B benchmark
         run: |
