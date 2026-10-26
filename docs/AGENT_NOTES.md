@@ -160,6 +160,44 @@ history made the old query walk every visit.
   diagnostic against the real machine must print timings, sizes and index names
   only.
 
+## 4c. Icon lookups: three ways to accidentally scan (2026-10-26)
+
+Favicons are read from the browser's own store, and every mistake below looked
+harmless in code review while costing more than the whole search it decorates.
+All numbers: 25 URLs against a 20,000-site icon database, sandbox.
+
+| written as | planned as | cost |
+|---|---|---|
+| `page_url LIKE 'https://site/%'` | SCAN (LIKE defeats the index unless case-sensitive) | 38.8 ms |
+| one `OR` across 50 range pairs | SCAN | 25.5 ms |
+| `icon_mapping JOIN favicon_bitmaps` | planner may drive from the bitmaps: every icon in the profile | 31.0 ms |
+| one range seek per site, staged lookups | SEARCH on `page_url`, then on `icon_id`/`id` | 0.40 ms |
+
+The lesson generalises: `EXPLAIN QUERY PLAN` the statement, not just the idea.
+`tests/test_favicons.py::QueryShape` fails if a LIKE or a multi-OR lookup comes
+back, and `tools/perf/bench_favicons.py` reproduces the table.
+
+Final cost of the feature at 25 results: **+0.205 ms** warm (0.949 -> 1.154 ms
+in the plugin, measured in-process by alternating the setting), 3.5 ms for the
+one keystroke that fills the cache.
+
+Beware the process-level A/B for effects this small: the same comparison by
+spawning `run.py` reported +8 ms with a 14-20 ms spread, which is noise. If a
+delta is under ~10 ms per process, measure it in-process.
+
+## 4d. Matching may be measured, not guessed
+
+`tools/perf/match_report.py` runs real searches against the real history and
+sorts each into found / filtered / fuzzy / unmatchable / absent, where only
+"fuzzy" is evidence for a new matcher. `--typos` reports how often one mistyped
+character still finds the page (today: never -- the match is a substring test).
+
+Flow Launcher does not re-rank plugin results by relevance: it orders by the
+`Score` field plus the user's own history. In particular `add_item(score=...)`
+is ours to set, and RPC plugins cannot call Flow's fuzzy matcher
+(Flow-Launcher/Flow.Launcher#3022). So matching is entirely ours to change, and
+needs no upstream PR.
+
 ## 5. Measurement discipline
 
 Findings only count if they reproduce on the user's machine. Sandbox numbers are synthetic (2
