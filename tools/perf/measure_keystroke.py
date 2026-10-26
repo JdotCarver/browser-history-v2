@@ -144,11 +144,11 @@ def time_process(command: list[str], *, cwd: Path, environment: dict, repeats: i
     return statistics.median(samples), output
 
 
-def rpc_request(query: str, settings: dict) -> str:
-    """The payload Flow Launcher passes as argv[1] for a query."""
+def rpc_request(query, settings: dict, method: str = "query") -> str:
+    """The payload Flow Launcher passes as argv[1] for a query or a context menu."""
     return json.dumps(
         {
-            "method": "query",
+            "method": method,
             "parameters": [query],
             "settings": settings,
         }
@@ -256,6 +256,26 @@ def main(argv=None) -> int:
                 "results": result_count(output),
                 "description": description,
             }
+
+        # The context menu is its own process, and reads no history at all. It
+        # should therefore never be slower than the listing it opens onto.
+        elapsed, output = time_process(
+            [
+                sys.executable,
+                "run.py",
+                rpc_request(
+                    ["A title", "https://example.com/x"], settings, method="context_menu"
+                ),
+            ],
+            cwd=plugin_dir,
+            environment=environment,
+            repeats=args.repeats,
+        )
+        report["keystrokes"]["menu"] = {
+            "ms": round(elapsed, 1),
+            "results": result_count(output),
+            "description": "the context menu on one result: two entries, no history",
+        }
 
         if not args.json:
             print(f"machine: {report['machine']}")

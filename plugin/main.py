@@ -1,5 +1,4 @@
 from flox import Flox, ICON_HISTORY, ICON_BROWSER, ICON_FILE
-import pyperclip
 import browsers
 from formatting import (
     DATE_ABSOLUTE,
@@ -26,6 +25,7 @@ class BrowserHistory(Flox):
     # Display defaults live on the class so that an instance built without
     # __init__ (the tests do this) still renders exactly like a configured one.
     show_favicons = False
+    _ready = False
     date_display = DATE_ABSOLUTE
     time_format = TIME_12
     url_display = URL_FULL
@@ -37,32 +37,6 @@ class BrowserHistory(Flox):
         # Get the exact Flow Launcher Settings/Plugins/BrowserHistory folder
         self.cache_dir = Path(self.settings_path).parent / "Cache"
 
-        current_pc = platform.node()
-        saved_pc = self.settings.get("last_computer_name", "")
-        keep_cache = self.settings.get("keep_history_cache", False)
-
-        # If the computer name changed (e.g., Portable mode moved to a new PC), wipe the cache
-        if current_pc != saved_pc:
-            if not keep_cache:
-                if self.cache_dir.exists():
-                    shutil.rmtree(self.cache_dir, ignore_errors=True)
-            self.settings["last_computer_name"] = current_pc
-
-        # Ensure the cache directory exists for this session
-        self.cache_dir.mkdir(parents=True, exist_ok=True)
-
-        # Garbage collection for old caches
-        current_time = time.time()
-        last_cleanup = self.settings.get("last_cache_cleanup", 0)
-        if current_time - last_cleanup > 86400:  # Check once every 24 hours
-            for cache_file in self.cache_dir.iterdir():
-                if cache_file.is_file():
-                    if current_time - cache_file.stat().st_mtime > (7 * 86400):
-                        try:
-                            cache_file.unlink()
-                        except OSError:
-                            pass
-            self.settings["last_cache_cleanup"] = current_time
 
         # Read the unified dropdown
         self.default_browser = self.settings.get(
@@ -104,8 +78,55 @@ class BrowserHistory(Flox):
         ]
         self.init_error = None
 
-        # Initialize browser(s) array uniformly
+        # Browsers are found on the first query, not here: a context-menu
+        # request never reads history, and exploring every browser's folders
+        # is the single most expensive thing this plugin can do up front.
         self.browsers = []
+        self._ready = False
+        self.favicons = FaviconStore(self.cache_dir, [])
+
+
+    def _ensure_ready(self):
+        """Everything a query needs and a context menu does not.
+
+        Flow Launcher runs this plugin as a fresh process for every keystroke
+        and every context menu, and the library it builds on does the work only
+        at interpreter shutdown -- so anything done eagerly in `__init__` is
+        paid on the menu path too, where no history is read at all.
+        """
+        if self._ready:
+            return
+        self._ready = True
+
+        current_pc = platform.node()
+        saved_pc = self.settings.get("last_computer_name", "")
+        keep_cache = self.settings.get("keep_history_cache", False)
+
+        # If the computer name changed (e.g., Portable mode moved to a new PC), wipe the cache
+        if current_pc != saved_pc:
+            if not keep_cache:
+                if self.cache_dir.exists():
+                    shutil.rmtree(self.cache_dir, ignore_errors=True)
+            self.settings["last_computer_name"] = current_pc
+
+        # Ensure the cache directory exists for this session
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
+
+        # Garbage collection for old caches
+        current_time = time.time()
+        last_cleanup = self.settings.get("last_cache_cleanup", 0)
+        if current_time - last_cleanup > 86400:  # Check once every 24 hours
+            for cache_file in self.cache_dir.iterdir():
+                if cache_file.is_file():
+                    if current_time - cache_file.stat().st_mtime > (7 * 86400):
+                        try:
+                            cache_file.unlink()
+                        except OSError:
+                            pass
+            self.settings["last_cache_cleanup"] = current_time
+
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
+
 
         if self.all_browsers_history:
             browser_names = (
@@ -200,14 +221,14 @@ class BrowserHistory(Flox):
 
         self.browsers = unique_browsers
 
-        self.favicons = FaviconStore(self.cache_dir, self.browsers)
-
+        self.browsers = unique_browsers
         if not self.browsers and not self.init_error:
-            self.init_error = (
-                "Could not locate any supported browser profile databases."
-            )
+            self.init_error = "Could not locate any supported browser profile databases."
+        self.favicons.browsers = self.browsers
 
     def query(self, query):
+        self._ensure_ready()
+
         if not self.browsers:
             self.add_item(
                 title="Browser not available",
@@ -291,6 +312,10 @@ class BrowserHistory(Flox):
         )
 
     def copy_to_clipboard(self, data):
+        # Imported here: the module loads a Windows library, and the context
+        # menu is built on the path where nothing should be loading anything.
+        import pyperclip
+
         pyperclip.copy(data)
         self.show_msg("Copied!", f"{data}")
 

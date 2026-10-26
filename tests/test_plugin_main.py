@@ -2,9 +2,12 @@
 """The Flow Launcher glue: how many rows each profile is asked for, and what is shown."""
 
 import datetime
+import os
 import sys
+import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "plugin"))
@@ -35,8 +38,13 @@ class FakeItem:
 
 
 def make_plugin(history_limit=1000, max_ui_results=500, browsers=None):
-    """A plugin instance with the settings that `__init__` would have read."""
+    """A plugin instance with the settings that `__init__` would have read.
+
+    `_ready` is set because these tests render results directly: discovery is
+    what a real query does first, and it is tested on its own below.
+    """
     plugin = object.__new__(main.BrowserHistory)
+    plugin._ready = True
     plugin.browsers = browsers if browsers is not None else [object()]
     plugin.history_limit = history_limit
     plugin.max_ui_results = max_ui_results
@@ -44,6 +52,74 @@ def make_plugin(history_limit=1000, max_ui_results=500, browsers=None):
     plugin._warnings = []
     plugin.items = []
     return plugin
+
+
+class LazyDiscoveryTests(unittest.TestCase):
+    """Discovery belongs to the query path: the context menu must not pay for it."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self._cwd = os.getcwd()
+        os.chdir(self._tmp.name)
+        self.addCleanup(os.chdir, self._cwd)
+        self.addCleanup(self._tmp.cleanup)
+
+    def test_constructing_the_plugin_explores_nothing(self):
+        with mock.patch.object(main.browsers, "get", side_effect=AssertionError("discovery")), \
+                mock.patch.object(main.browsers, "get_all_profiles", side_effect=AssertionError("discovery")):
+            plugin = main.BrowserHistory()
+
+        self.assertEqual(plugin.browsers, [])
+        self.assertFalse(plugin._ready)
+
+    def test_the_context_menu_is_built_without_browsers(self):
+        plugin = main.BrowserHistory()
+
+        plugin.context_menu(["A title", "https://example.com/x"])
+
+        self.assertEqual(
+            [item["title"] for item in plugin.items],
+            ["Open in browser", "Copy to clipboard"],
+        )
+
+    def test_the_first_query_discovers_and_the_second_does_not(self):
+        plugin = main.BrowserHistory()
+        calls = []
+
+        def counting(*args, **kwargs):
+            calls.append(args)
+            return None
+
+        with mock.patch.object(main.browsers, "get", side_effect=counting):
+            plugin.query("")
+            after_first = len(calls)
+            plugin.query("")
+
+        self.assertGreater(after_first, 0)
+        self.assertEqual(len(calls), after_first, "discovery must not repeat per query")
+
+    def test_a_query_with_no_browsers_still_explains_itself(self):
+        plugin = main.BrowserHistory()
+
+        with mock.patch.object(main.browsers, "get", return_value=None):
+            plugin.query("")
+
+        self.assertEqual(plugin.items[0]["title"], "Browser not available")
+
+
+class ClipboardTests(unittest.TestCase):
+    def test_copying_works_with_the_import_deferred(self):
+        _flox, pyperclip = flow_stub.install()
+        pyperclip.copied.clear()
+        plugin = make_plugin()
+
+        plugin.copy_to_clipboard("https://example.com/x")
+
+        self.assertEqual(pyperclip.copied, ["https://example.com/x"])
+
+    def test_the_module_does_not_import_pyperclip_on_load(self):
+        """Loading the clipboard module costs time on every keystroke, including menus."""
+        self.assertFalse(hasattr(main, "pyperclip"))
 
 
 class RowBudgetTests(unittest.TestCase):

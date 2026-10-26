@@ -198,6 +198,33 @@ is ours to set, and RPC plugins cannot call Flow's fuzzy matcher
 (Flow-Launcher/Flow.Launcher#3022). So matching is entirely ours to change, and
 needs no upstream PR.
 
+## 4e. How a request actually runs (flox), and why eager work is a trap
+
+`run.py` imports `plugin.main` and calls `BrowserHistory().run()` -- and `run()`
+is empty. The RPC is executed by `flox.launcher.Launcher.__del__`, which calls
+`__call__()` when the instance is collected at interpreter shutdown. So:
+
+    __init__  ->  run() does nothing  ->  interpreter shutdown  ->  __del__  ->  the RPC
+
+Two consequences:
+
+* **Anything eager in `__init__` is paid by every request**, including a
+  context menu, which reads no history and needs no browsers. Browser
+  discovery and cache maintenance therefore live in `_ensure_ready()`, called
+  from `query()` only.
+* Work happens while the interpreter is tearing down. That is where the
+  intermittent `import of ... halted; None in sys.modules` error seen in probes
+  comes from. It is a flox frame, not this plugin's (do not chase it), but it is
+  another reason not to add lazy imports that only run at the very end.
+
+Modifying `sys.path`/imports at `__init__` time is fine; importing a module that
+loads a Windows library (e.g. `pyperclip`) is deferred to the action that needs
+it, so a keystroke or a menu never pays for the clipboard.
+
+Measure both RPC shapes: `measure_keystroke.py` reports `menu` alongside
+`idle`/`search`/`absent`, since the menu is the one request that must never be
+slower than the listing it opens onto.
+
 ## 5. Measurement discipline
 
 Findings only count if they reproduce on the user's machine. Sandbox numbers are synthetic (2
