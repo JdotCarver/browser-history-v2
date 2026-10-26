@@ -20,8 +20,8 @@ set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-BRANCH="BRANCHNAMEHERE"
-BASE_COMMIT="BASECOMMITHERE"
+BRANCH="arena/b80febd6-browser-history-v2"
+BASE_COMMIT="7d28c21a45101f3d75991c1de97686eaad2c85b9"
 
 PASS=0
 FAIL=0

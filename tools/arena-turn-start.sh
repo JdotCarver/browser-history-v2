@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # tools/arena-turn-start.sh
 #
-# Arena turn-start sync + harness repair for the FlowLauncherPlugin-PlayniteLibrary repository.
+# Arena turn-start sync + harness repair for the Browser History V2 plugin repository.
 #
 # Run at the START of every turn:   bash tools/arena-turn-start.sh
 #
@@ -42,20 +42,18 @@
 set -uo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-BRANCH="BRANCHNAMEHERE"
-BASE_COMMIT="BASECOMMITHERE"
+BRANCH="arena/b80febd6-browser-history-v2"
+BASE_COMMIT="7d28c21a45101f3d75991c1de97686eaad2c85b9"
 
 # Files whose absence means "the snapshot restore is incomplete".
 # Keep this in sync with docs/AGENT_NOTES.md §2 when load-bearing files appear.
 KEY_FILES=(
-    "data/plugin.json"
-    "src/run.py"
-    "src/plugin/__main__.py"
-    "src/plugin/playnite.py"
-    "src/plugin/library_source.py"
-    "src/plugin/library_server.py"
-    "src/plugin/results.py"
-    "src/plugin/settings.py"
+    "plugin.json"
+    "run.py"
+    "requirements.txt"
+    "SettingsTemplate.yaml"
+    "plugin/main.py"
+    "plugin/browsers.py"
 )
 
 cd "$REPO_ROOT" || exit 1
@@ -179,9 +177,9 @@ for file in "${KEY_FILES[@]}"; do
 done
 
 # Any JSON we ship must at least parse; a corrupted manifest is invisible otherwise.
-if [ -f data/plugin.json ]; then
-    if ! python3 -c 'import json,sys; json.load(open("data/plugin.json"))'; then
-        echo "!! data/plugin.json is not valid JSON"
+if [ -f plugin.json ]; then
+    if ! python3 -c 'import json,sys; json.load(open("plugin.json"))'; then
+        echo "!! plugin.json is not valid JSON"
         missing=1
     fi
 fi
