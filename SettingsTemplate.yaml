@@ -91,6 +91,12 @@ body:
       label: Show Favicons
       defaultValue: False
       description: Show each site's icon, taken from your browser's own icon cache (no requests are made). The first search reads the icons; later ones reuse the cache.
+  - type: checkbox
+    attributes:
+      name: trace_requests
+      label: Trace Requests
+      defaultValue: False
+      description: Diagnostic. Records timing numbers for each request, and the request type, to Cache/requests.jsonl. No search text, URLs or titles are recorded. Turn it off when you are done.
   - type: textarea
     attributes:
       name: blocked_domains

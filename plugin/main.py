@@ -8,15 +8,24 @@ from formatting import (
     format_subtitle,
 )
 from favicons import FaviconStore
+from tracing import RequestTrace, process_start_mono as process_entry_mono
 from results import newest_unique, read_profiles
+import os
 import platform
 import shutil
 import time
 from pathlib import Path
 from datetime import datetime
 
+# The last moment this module can see before it is constructed. Every request
+# passes through here, so it is the honest start for the plugin's own cost.
+IMPORTS_DONE_MONO = time.perf_counter()
+
 # Constants
 HISTORY_GLYPH = ""
+
+# Used by instances that never ran __init__ (the tests build them this way).
+NO_TRACE = RequestTrace(Path(os.devnull), enabled=False)
 CUSTOM_PROFILE = "custom profile"
 
 
@@ -26,6 +35,7 @@ class BrowserHistory(Flox):
     # __init__ (the tests do this) still renders exactly like a configured one.
     show_favicons = False
     _ready = False
+    trace = NO_TRACE
     date_display = DATE_ABSOLUTE
     time_format = TIME_12
     url_display = URL_FULL
@@ -33,6 +43,7 @@ class BrowserHistory(Flox):
 
     def __init__(self):
         super().__init__()
+        self.trace = NO_TRACE
 
         # Get the exact Flow Launcher Settings/Plugins/BrowserHistory folder
         self.cache_dir = Path(self.settings_path).parent / "Cache"
@@ -78,13 +89,68 @@ class BrowserHistory(Flox):
         ]
         self.init_error = None
 
+        # Request tracing is off unless asked for. It lives beside the settings
+        # file rather than in the cache: the cache is wiped on a machine change
+        # and aged out after a week, and a trace that vanishes is no use.
+        self.trace = RequestTrace(
+            Path(self.settings_path).parent / "requests.jsonl",
+            enabled=str(self.settings.get("trace_requests", False)).strip().lower()
+            in ("true", "1", "yes"),
+            import_mono=IMPORTS_DONE_MONO,
+            entry_mono=process_entry_mono(),
+        )
+
         # Browsers are found on the first query, not here: a context-menu
         # request never reads history, and exploring every browser's folders
         # is the single most expensive thing this plugin can do up front.
         self.browsers = []
         self._ready = False
         self.favicons = FaviconStore(self.cache_dir, [])
+        self.trace.mark("constructed")
 
+
+    def _machine_marker(self) -> Path:
+        """Where the last machine seen is recorded, beside the settings file.
+
+        Not inside the cache: the marker guards the cache, so a wipe must not
+        take it with it. A settings value is still honoured for installs that
+        predate the marker.
+        """
+        return Path(self.settings_path).parent / "machine.txt"
+
+    def _prepare_cache(self) -> None:
+        """Wipe the cache when the machine changed, then age out old files."""
+        current_pc = platform.node()
+        marker = self._machine_marker()
+        try:
+            saved_pc = marker.read_text(encoding="utf-8").strip()
+        except OSError:
+            saved_pc = str(self.settings.get("last_computer_name", "")).strip()
+
+        if current_pc != saved_pc:
+            if not self.settings.get("keep_history_cache", False):
+                if self.cache_dir.exists():
+                    shutil.rmtree(self.cache_dir, ignore_errors=True)
+            try:
+                marker.write_text(current_pc, encoding="utf-8")
+            except OSError:
+                # Fall back to the settings file, as before: without anywhere
+                # to record it, a writable settings file is the next best thing.
+                self.settings["last_computer_name"] = current_pc
+
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
+
+        current_time = time.time()
+        last_cleanup = self.settings.get("last_cache_cleanup", 0)
+        if current_time - last_cleanup > 86400:  # Check once every 24 hours
+            for cache_file in self.cache_dir.iterdir():
+                if cache_file.is_file():
+                    if current_time - cache_file.stat().st_mtime > (7 * 86400):
+                        try:
+                            cache_file.unlink()
+                        except OSError:
+                            pass
+            self.settings["last_cache_cleanup"] = current_time
 
     def _ensure_ready(self):
         """Everything a query needs and a context menu does not.
@@ -98,35 +164,7 @@ class BrowserHistory(Flox):
             return
         self._ready = True
 
-        current_pc = platform.node()
-        saved_pc = self.settings.get("last_computer_name", "")
-        keep_cache = self.settings.get("keep_history_cache", False)
-
-        # If the computer name changed (e.g., Portable mode moved to a new PC), wipe the cache
-        if current_pc != saved_pc:
-            if not keep_cache:
-                if self.cache_dir.exists():
-                    shutil.rmtree(self.cache_dir, ignore_errors=True)
-            self.settings["last_computer_name"] = current_pc
-
-        # Ensure the cache directory exists for this session
-        self.cache_dir.mkdir(parents=True, exist_ok=True)
-
-        # Garbage collection for old caches
-        current_time = time.time()
-        last_cleanup = self.settings.get("last_cache_cleanup", 0)
-        if current_time - last_cleanup > 86400:  # Check once every 24 hours
-            for cache_file in self.cache_dir.iterdir():
-                if cache_file.is_file():
-                    if current_time - cache_file.stat().st_mtime > (7 * 86400):
-                        try:
-                            cache_file.unlink()
-                        except OSError:
-                            pass
-            self.settings["last_cache_cleanup"] = current_time
-
-        self.cache_dir.mkdir(parents=True, exist_ok=True)
-
+        self._prepare_cache()
 
         if self.all_browsers_history:
             browser_names = (
@@ -227,14 +265,25 @@ class BrowserHistory(Flox):
         self.favicons.browsers = self.browsers
 
     def query(self, query):
+        self.trace.mark("rpc")
+        try:
+            rendered = self._render_results(query)
+        finally:
+            self.trace.mark("rendered")
+            self.trace.finish(
+                "query", flow=getattr(self, "appversion", ""), results=rendered
+            )
+
+    def _render_results(self, query):
         self._ensure_ready()
+        self.trace.mark("ready")
 
         if not self.browsers:
             self.add_item(
                 title="Browser not available",
                 subtitle=self.init_error or "Unknown error initializing browser.",
             )
-            return
+            return 1
 
         try:
             source_items = self._get_combined_history(query)
@@ -278,11 +327,13 @@ class BrowserHistory(Flox):
                     parameters=[item.url],
                     context=[item.title, item.url],
                 )
+            return len(source_items)
         except Exception as e:
             self.add_item(
                 title="An error occurred",
                 subtitle=str(e),
             )
+            return 1
 
     def _get_combined_history(self, query):
         # No profile can contribute more rows than the UI will ever show, and a
@@ -296,6 +347,8 @@ class BrowserHistory(Flox):
         return newest_unique(items, self.max_ui_results)
 
     def context_menu(self, data):
+        self.trace.mark("rpc")
+        self.trace.mark("ready")
         self.add_item(
             title="Open in browser",
             subtitle=data[0],
@@ -309,6 +362,12 @@ class BrowserHistory(Flox):
             icon=ICON_FILE,
             method=self.copy_to_clipboard,
             parameters=[data[1]],
+        )
+        self.trace.mark("rendered")
+        self.trace.finish(
+            "context_menu",
+            flow=getattr(self, "appversion", ""),
+            results=len(getattr(self, "_results", [])),
         )
 
     def copy_to_clipboard(self, data):

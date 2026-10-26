@@ -115,6 +115,99 @@ class LazyDiscoveryTests(unittest.TestCase):
         self.assertEqual(plugin.items[0]["title"], "Browser not available")
 
 
+class CachePreparationTests(unittest.TestCase):
+    """The cache is wiped once when the machine changes, not on every request."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.home = Path(self._tmp.name) / "Plugins" / "Browser History V2"
+        self.home.mkdir(parents=True)
+        self.cache = self.home / "Cache"
+
+    def plugin(self, settings=None):
+        plugin = object.__new__(main.BrowserHistory)
+        plugin.settings_path = str(self.home / "Settings.json")
+        plugin.cache_dir = self.cache
+        plugin.settings = dict(settings or {})
+        return plugin
+
+    def mark_machine(self):
+        """Pretend a previous run already recorded this machine."""
+        (self.home / "machine.txt").write_text(main.platform.node())
+
+    def create_cache_file(self, name="bh_history_cache.sqlite"):
+        self.cache.mkdir(parents=True, exist_ok=True)
+        (self.cache / name).write_text("x")
+        return self.cache / name
+
+    def test_a_first_run_records_the_machine(self):
+        plugin = self.plugin()
+        self.create_cache_file()
+
+        plugin._prepare_cache()
+
+        self.assertTrue((self.home / "machine.txt").exists())
+        self.assertTrue(self.cache.is_dir())
+
+    def test_a_later_run_on_the_same_machine_leaves_the_cache_alone(self):
+        file = self.create_cache_file()
+        self.plugin()._prepare_cache()          # first run: records the machine
+        file.write_text("still here")
+
+        self.plugin()._prepare_cache()          # second run, no settings persisted
+
+        self.assertTrue(file.exists(), "the cache must not be wiped twice")
+        self.assertEqual(file.read_text(), "still here")
+
+    def test_a_different_machine_wipes_it_once(self):
+        file = self.create_cache_file()
+        (self.home / "machine.txt").write_text("some-other-pc")
+
+        self.plugin()._prepare_cache()
+
+        self.assertFalse(file.exists())
+        self.assertEqual(
+            (self.home / "machine.txt").read_text().strip(), main.platform.node()
+        )
+
+    def test_keeping_the_cache_survives_a_machine_change(self):
+        file = self.create_cache_file()
+        (self.home / "machine.txt").write_text("some-other-pc")
+
+        self.plugin({"keep_history_cache": True})._prepare_cache()
+
+        self.assertTrue(file.exists())
+
+    def test_an_old_install_is_not_wiped_again(self):
+        """A settings file with the machine name predates the marker file."""
+        file = self.create_cache_file()
+
+        self.plugin({"last_computer_name": main.platform.node()})._prepare_cache()
+
+        self.assertTrue(file.exists())
+
+    def test_files_older_than_a_week_are_collected(self):
+        self.mark_machine()
+        old = self.create_cache_file("old.sqlite")
+        fresh = self.create_cache_file("fresh.sqlite")
+        os.utime(old, (0, 0))
+
+        self.plugin()._prepare_cache()
+
+        self.assertFalse(old.exists())
+        self.assertTrue(fresh.exists())
+
+    def test_collection_runs_at_most_once_a_day(self):
+        self.mark_machine()
+        old = self.create_cache_file("old.sqlite")
+        os.utime(old, (0, 0))
+
+        self.plugin({"last_cache_cleanup": main.time.time()})._prepare_cache()
+
+        self.assertTrue(old.exists(), "recently checked, so nothing is collected")
+
+
 class ClipboardTests(unittest.TestCase):
     def test_copying_works_with_the_import_deferred(self):
         _flox, pyperclip = flow_stub.install()
