@@ -1,0 +1,139 @@
+﻿2026-10-26T18:55:54.0535998Z Current runner version: '2.338.0'
+2026-10-26T18:55:54.0554014Z ##[group]Runner Image Provisioner
+2026-10-26T18:55:54.0554808Z Hosted Compute Agent
+2026-10-26T18:55:54.0555301Z Version: 20261021.618
+2026-10-26T18:55:54.0555806Z Commit: 21505ad2541d5be6135ed84fc33697146cf75b8e
+2026-10-26T18:55:54.0556442Z Build Date: 2026-10-21T00:45:21Z
+2026-10-26T18:55:54.0557226Z Worker ID: {926d6235-2ff1-4891-be99-44a790b68ec9}
+2026-10-26T18:55:54.0557881Z Region: centralus
+2026-10-26T18:55:54.0558342Z Cloud: Azure
+2026-10-26T18:55:54.0558775Z ##[endgroup]
+2026-10-26T18:55:54.0559910Z ##[group]Operating System
+2026-10-26T18:55:54.0560423Z Ubuntu
+2026-10-26T18:55:54.0560882Z 24.04.5
+2026-10-26T18:55:54.0561312Z LTS
+2026-10-26T18:55:54.0561746Z ##[endgroup]
+2026-10-26T18:55:54.0562214Z ##[group]Runner Image
+2026-10-26T18:55:54.0562708Z Image: ubuntu-24.04
+2026-10-26T18:55:54.0563228Z Version: 20261012.334.1
+2026-10-26T18:55:54.0564227Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261012.334/images/ubuntu/Ubuntu2404-Readme.md
+2026-10-26T18:55:54.0565486Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261012.334
+2026-10-26T18:55:54.0566421Z ##[endgroup]
+2026-10-26T18:55:54.0567829Z ##[group]GITHUB_TOKEN Permissions
+2026-10-26T18:55:54.0569676Z Contents: write
+2026-10-26T18:55:54.0570171Z Metadata: read
+2026-10-26T18:55:54.0570645Z ##[endgroup]
+2026-10-26T18:55:54.0572568Z Secret source: Actions
+2026-10-26T18:55:54.0573350Z Cache mode: write
+2026-10-26T18:55:54.0573939Z Prepare workflow directory
+2026-10-26T18:55:54.0845103Z Prepare all required actions
+2026-10-26T18:55:54.0885354Z Getting action download info
+2026-10-26T18:55:54.3506323Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-10-26T18:55:54.5041261Z Complete job name: Select runner
+2026-10-26T18:55:54.5711722Z ##[group]Run actions/checkout@v4
+2026-10-26T18:55:54.5712459Z with:
+2026-10-26T18:55:54.5712927Z   repository: JdotCarver/browser-history-v2
+2026-10-26T18:55:54.5716373Z   token: ***
+2026-10-26T18:55:54.5717167Z   ssh-strict: true
+2026-10-26T18:55:54.5717626Z   ssh-user: git
+2026-10-26T18:55:54.5718096Z   persist-credentials: true
+2026-10-26T18:55:54.5718571Z   clean: true
+2026-10-26T18:55:54.5719005Z   sparse-checkout-cone-mode: true
+2026-10-26T18:55:54.5719557Z   fetch-depth: 1
+2026-10-26T18:55:54.5719990Z   fetch-tags: false
+2026-10-26T18:55:54.5720432Z   show-progress: true
+2026-10-26T18:55:54.5720893Z   lfs: false
+2026-10-26T18:55:54.5721335Z   submodules: false
+2026-10-26T18:55:54.5721834Z   set-safe-directory: true
+2026-10-26T18:55:54.5722318Z   allow-unsafe-pr-checkout: false
+2026-10-26T18:55:54.5722967Z ##[endgroup]
+2026-10-26T18:55:54.6629541Z Syncing repository: JdotCarver/browser-history-v2
+2026-10-26T18:55:54.6631586Z ##[group]Getting Git version info
+2026-10-26T18:55:54.6632439Z Working directory is '/home/<user>/work/browser-history-v2/browser-history-v2'
+2026-10-26T18:55:54.6633715Z [command]/usr/bin/git version
+2026-10-26T18:55:54.6685366Z git version 2.55.0
+2026-10-26T18:55:54.6699784Z ##[endgroup]
+2026-10-26T18:55:54.6710536Z Temporarily overriding HOME='/home/<user>/work/_temp/ec65e917-e998-4eba-84e7-79f8a8cc1b2a' before making global git config changes
+2026-10-26T18:55:54.6713476Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-26T18:55:54.6714961Z [command]/usr/bin/git config --global --add safe.directory /home/<user>/work/browser-history-v2/browser-history-v2
+2026-10-26T18:55:54.6759700Z Deleting the contents of '/home/<user>/work/browser-history-v2/browser-history-v2'
+2026-10-26T18:55:54.6762823Z ##[group]Initializing the repository
+2026-10-26T18:55:54.6768487Z [command]/usr/bin/git init /home/<user>/work/browser-history-v2/browser-history-v2
+2026-10-26T18:55:54.6866992Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-10-26T18:55:54.6869816Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-10-26T18:55:54.6871289Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-10-26T18:55:54.6872667Z hint: call:
+2026-10-26T18:55:54.6873669Z hint:
+2026-10-26T18:55:54.6874635Z hint: 	git config --global init.defaultBranch <name>
+2026-10-26T18:55:54.6875645Z hint:
+2026-10-26T18:55:54.6876689Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-10-26T18:55:54.6877909Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-10-26T18:55:54.6878760Z hint:
+2026-10-26T18:55:54.6879331Z hint: 	git branch -m <name>
+2026-10-26T18:55:54.6879951Z hint:
+2026-10-26T18:55:54.6880658Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-10-26T18:55:54.6881769Z Initialized empty Git repository in /home/<user>/work/browser-history-v2/browser-history-v2/.git/
+2026-10-26T18:55:54.6883842Z [command]/usr/bin/git remote add origin https://github.com/JdotCarver/browser-history-v2
+2026-10-26T18:55:54.6926691Z ##[endgroup]
+2026-10-26T18:55:54.6928101Z ##[group]Disabling automatic garbage collection
+2026-10-26T18:55:54.6930474Z [command]/usr/bin/git config --local gc.auto 0
+2026-10-26T18:55:54.6963911Z ##[endgroup]
+2026-10-26T18:55:54.6965239Z ##[group]Setting up auth
+2026-10-26T18:55:54.6970998Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-26T18:55:54.7002479Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-26T18:55:54.7288757Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-26T18:55:54.7321799Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-26T18:55:54.7477105Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-26T18:55:54.7502272Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-26T18:55:54.7658161Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-10-26T18:55:54.7687828Z ##[endgroup]
+2026-10-26T18:55:54.7688703Z ##[group]Fetching the repository
+2026-10-26T18:55:54.7695002Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +00e08c34af4662a9fc4a28e702fc5a3fdf702ed8:refs/remotes/origin/arena/b80febd6-browser-history-v2
+2026-10-26T18:55:55.1685568Z From https://github.com/JdotCarver/browser-history-v2
+2026-10-26T18:55:55.1687594Z  * [new ref]         00e08c34af4662a9fc4a28e702fc5a3fdf702ed8 -> origin/arena/b80febd6-browser-history-v2
+2026-10-26T18:55:55.1690371Z ##[endgroup]
+2026-10-26T18:55:55.1691543Z ##[group]Determining the checkout info
+2026-10-26T18:55:55.1693805Z ##[endgroup]
+2026-10-26T18:55:55.1698597Z [command]/usr/bin/git sparse-checkout disable
+2026-10-26T18:55:55.1740775Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-10-26T18:55:55.1764859Z ##[group]Checking out the ref
+2026-10-26T18:55:55.1769296Z [command]/usr/bin/git checkout --progress --force -B arena/b80febd6-browser-history-v2 refs/remotes/origin/arena/b80febd6-browser-history-v2
+2026-10-26T18:55:55.1908581Z Switched to a new branch 'arena/b80febd6-browser-history-v2'
+2026-10-26T18:55:55.1911775Z branch 'arena/b80febd6-browser-history-v2' set up to track 'origin/arena/b80febd6-browser-history-v2'.
+2026-10-26T18:55:55.1916351Z ##[endgroup]
+2026-10-26T18:55:55.1948151Z [command]/usr/bin/git log -1 --format=%H
+2026-10-26T18:55:55.1965855Z 00e08c34af4662a9fc4a28e702fc5a3fdf702ed8
+2026-10-26T18:55:55.2179747Z ##[group]Run python3 tools/github_actions_runner/select_runner.py .github/runner-request.toml >> "$GITHUB_OUTPUT"
+2026-10-26T18:55:55.2181210Z python3 tools/github_actions_runner/select_runner.py .github/runner-request.toml >> "$GITHUB_OUTPUT"
+2026-10-26T18:55:55.2341188Z shell: /usr/bin/bash -e {0}
+2026-10-26T18:55:55.2341876Z ##[endgroup]
+2026-10-26T18:55:55.3097369Z ##[group]Run echo "target: local-windows"
+2026-10-26T18:55:55.3098080Z echo "target: local-windows"
+2026-10-26T18:55:55.3098770Z echo "labels: ["self-hosted","windows","arena-session"]"
+2026-10-26T18:55:55.3099552Z echo "workload: Redaction and Details Panel"
+2026-10-26T18:55:55.3131540Z shell: /usr/bin/bash -e {0}
+2026-10-26T18:55:55.3132098Z ##[endgroup]
+2026-10-26T18:55:55.3182080Z target: local-windows
+2026-10-26T18:55:55.3183565Z labels: [self-hosted,windows,arena-session]
+2026-10-26T18:55:55.3184501Z workload: Redaction and Details Panel
+2026-10-26T18:55:55.3325279Z Post job cleanup.
+2026-10-26T18:55:55.4035101Z [command]/usr/bin/git version
+2026-10-26T18:55:55.4064988Z git version 2.55.0
+2026-10-26T18:55:55.4094106Z Temporarily overriding HOME='/home/<user>/work/_temp/b2ffd1b7-2414-4711-b8a7-45ab2a7efff2' before making global git config changes
+2026-10-26T18:55:55.4096513Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-26T18:55:55.4098685Z [command]/usr/bin/git config --global --add safe.directory /home/<user>/work/browser-history-v2/browser-history-v2
+2026-10-26T18:55:55.4130596Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-26T18:55:55.4157928Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-26T18:55:55.4334638Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-26T18:55:55.4355995Z http.https://github.com/.extraheader
+2026-10-26T18:55:55.4366382Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-10-26T18:55:55.4394460Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-26T18:55:55.4574328Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-26T18:55:55.4595483Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-26T18:55:55.4874867Z Evaluate and set job outputs
+2026-10-26T18:55:55.4882595Z Set output 'request_id'
+2026-10-26T18:55:55.4884453Z Set output 'target'
+2026-10-26T18:55:55.4885556Z Set output 'workload_name'
+2026-10-26T18:55:55.4886407Z Set output 'runner_labels'
+2026-10-26T18:55:55.4887788Z Cleaning up orphan processes
+2026-10-26T18:55:55.5223371Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
