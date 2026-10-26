@@ -112,11 +112,19 @@ on synthetic data only.
 | full keystroke, matching search | 128.8 ms (500 results) |
 | full keystroke, no match yet | 120.6 ms (0 results) |
 
-So **64 % of a keystroke is imports**, and the plugin's own work is 42-51 ms.
-Within that work the database is now 2.5 ms (idle) to 8 ms (a matching search),
-which means **rendering 500 items plus init and teardown is the next target, not
-SQL**. `flox` alone is 41.7 ms of the imports and cannot be removed; whether
-`pyperclip` (imported eagerly in `main.py`) can be deferred is unmeasured.
+So **64 % of a keystroke is imports** and the plugin's own work is 42-51 ms.
+`flox` alone is 41.7 ms of the imports and cannot be removed; whether `pyperclip`
+(imported eagerly in `main.py`) can be deferred is unmeasured.
+
+Most of that 42-51 ms is rendering: those measurements ran at the template's
+default `max_ui_results` of 500. **The owner runs 25.** Rendering therefore costs
+about 2 ms for them, leaving ~5 ms of plugin work after the database -- so at
+their settings a keystroke is roughly 85 ms and almost entirely process start-up.
+Measure with `--max-results 25` before optimising anything here.
+
+Conclusion: **the runtime pass is finished.** There is no remaining query or
+rendering work worth a change at this owner's settings; the floor is the
+interpreter plus the launcher library.
 
 ### Query work per profile
 

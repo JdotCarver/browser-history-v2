@@ -54,11 +54,16 @@ DEFAULT_SETTINGS = {
     "keep_history_cache": False,
 }
 
+
+def settings_for(max_results: int) -> dict:
+    """The settings a keystroke is measured with; rendering cost scales with this."""
+    return dict(DEFAULT_SETTINGS, max_ui_results=str(max_results))
+
 #: Long enough that nothing real matches it.
 ABSENT_TERM = "qzxqzxqzx"
 
 
-def build_plugin_layout(work_dir: Path) -> tuple[Path, Path]:
+def build_plugin_layout(work_dir: Path, settings: dict) -> tuple[Path, Path]:
     """Create a portable-mode Flow tree containing a copy of this plugin."""
     launcher_root = work_dir / "UserData" / "FlowLauncher"
     plugin_dir = launcher_root / "Plugins" / PLUGIN_NAME
@@ -71,7 +76,7 @@ def build_plugin_layout(work_dir: Path) -> tuple[Path, Path]:
     settings_dir = launcher_root / "Settings" / "Plugins" / MANIFEST["Name"]
     settings_dir.mkdir(parents=True)
     (settings_dir / "Settings.json").write_text(
-        json.dumps(DEFAULT_SETTINGS, indent=2), encoding="utf-8"
+        json.dumps(settings, indent=2), encoding="utf-8"
     )
 
     # Flow keeps one app-level settings file that maps each plugin to its action
@@ -135,13 +140,13 @@ def time_process(command: list[str], *, cwd: Path, environment: dict, repeats: i
     return statistics.median(samples), output
 
 
-def rpc_request(query: str) -> str:
+def rpc_request(query: str, settings: dict) -> str:
     """The payload Flow Launcher passes as argv[1] for a query."""
     return json.dumps(
         {
             "method": "query",
             "parameters": [query],
-            "settings": DEFAULT_SETTINGS,
+            "settings": settings,
         }
     )
 
@@ -164,6 +169,12 @@ def result_count(output: str) -> int:
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repeats", type=int, default=7)
+    parser.add_argument(
+        "--max-results",
+        type=int,
+        default=500,
+        help="the max_ui_results setting to measure with; rendering cost scales with it",
+    )
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
 
@@ -175,7 +186,8 @@ def main(argv=None) -> int:
     }, "steps": {}, "keystrokes": {}}
 
     try:
-        plugin_dir, _launcher_root = build_plugin_layout(work_dir)
+        settings = settings_for(args.max_results)
+        plugin_dir, _launcher_root = build_plugin_layout(work_dir, settings)
         lib_dir = install_dependencies(plugin_dir)
 
         environment = dict(os.environ)
@@ -225,7 +237,7 @@ def main(argv=None) -> int:
                 }
                 continue
             elapsed, output = time_process(
-                [sys.executable, "run.py", rpc_request(query)],
+                [sys.executable, "run.py", rpc_request(query, settings)],
                 cwd=plugin_dir,
                 environment=environment,
                 repeats=args.repeats,
@@ -239,6 +251,7 @@ def main(argv=None) -> int:
         if not args.json:
             print(f"machine: {report['machine']}")
             print(f"plugin: {plugin_dir.relative_to(work_dir)}")
+            print(f"max_ui_results: {args.max_results}")
             print()
             print(f"{'step':<32}{'median':>10}")
             print("-" * 42)
