@@ -1,0 +1,34 @@
+{
+  "capture_note": "Status is captured while Export logs is still in progress; use the final workflow conclusion for that job's result.",
+  "conclusion": null,
+  "event": "push",
+  "head_branch": "arena/b80febd6-browser-history-v2",
+  "head_sha": "d6232a980268aa03c0bc4025f2f78bc6eae30ae1",
+  "id": 40358292630,
+  "jobs": [
+    {
+      "conclusion": "success",
+      "id": 121696558625,
+      "name": "Select runner",
+      "status": "completed",
+      "url": "https://github.com/JdotCarver/browser-history-v2/actions/runs/40358292630/job/121696558625"
+    },
+    {
+      "conclusion": "failure",
+      "id": 121696641710,
+      "name": "Context Menu Cost",
+      "status": "completed",
+      "url": "https://github.com/JdotCarver/browser-history-v2/actions/runs/40358292630/job/121696641710"
+    },
+    {
+      "conclusion": null,
+      "id": 121696788615,
+      "name": "Export logs",
+      "status": "in_progress",
+      "url": "https://github.com/JdotCarver/browser-history-v2/actions/runs/40358292630/job/121696788615"
+    }
+  ],
+  "name": "Runner request",
+  "status": "in_progress",
+  "url": "https://github.com/JdotCarver/browser-history-v2/actions/runs/40358292630"
+}
