@@ -123,3 +123,6 @@ bin/
 
 # GitHub Actions runner logs fetched by tools/github_actions_runner
 .runner-logs/
+
+# Written by the plugin when it has no settings path to sit beside
+machine.txt

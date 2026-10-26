@@ -109,33 +109,49 @@ class BrowserHistory(Flox):
         self.trace.mark("constructed")
 
 
-    def _machine_marker(self) -> Path:
+    def _machine_marker(self):
         """Where the last machine seen is recorded, beside the settings file.
 
         Not inside the cache: the marker guards the cache, so a wipe must not
         take it with it. A settings value is still honoured for installs that
         predate the marker.
+
+        Returns None when there is no settings path to sit beside -- an empty
+        path means the process' working directory, and writing a marker into
+        whichever directory happens to be current is not a cache decision.
         """
-        return Path(self.settings_path).parent / "machine.txt"
+        settings_path = str(getattr(self, "settings_path", "") or "").strip()
+        if not settings_path:
+            return None
+        return Path(settings_path).parent / "machine.txt"
 
     def _prepare_cache(self) -> None:
         """Wipe the cache when the machine changed, then age out old files."""
         current_pc = platform.node()
         marker = self._machine_marker()
-        try:
-            saved_pc = marker.read_text(encoding="utf-8").strip()
-        except OSError:
+        saved_pc = ""
+        if marker is not None:
+            try:
+                saved_pc = marker.read_text(encoding="utf-8").strip()
+            except OSError:
+                saved_pc = ""
+        if not saved_pc:
             saved_pc = str(self.settings.get("last_computer_name", "")).strip()
 
         if current_pc != saved_pc:
             if not self.settings.get("keep_history_cache", False):
                 if self.cache_dir.exists():
                     shutil.rmtree(self.cache_dir, ignore_errors=True)
-            try:
-                marker.write_text(current_pc, encoding="utf-8")
-            except OSError:
-                # Fall back to the settings file, as before: without anywhere
-                # to record it, a writable settings file is the next best thing.
+            written = False
+            if marker is not None:
+                try:
+                    marker.write_text(current_pc, encoding="utf-8")
+                    written = True
+                except OSError:
+                    pass
+            if not written:
+                # Nowhere on disk to record it: the settings file is the next
+                # best thing, exactly as before the marker existed.
                 self.settings["last_computer_name"] = current_pc
 
         self.cache_dir.mkdir(parents=True, exist_ok=True)

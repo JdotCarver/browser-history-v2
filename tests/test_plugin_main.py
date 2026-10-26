@@ -179,6 +179,17 @@ class CachePreparationTests(unittest.TestCase):
 
         self.assertTrue(file.exists())
 
+    def test_no_settings_path_records_nothing_on_disk(self):
+        """An empty settings path is the working directory, not somewhere to write."""
+        plugin = self.plugin()
+        plugin.settings_path = ""
+        self.create_cache_file()
+
+        plugin._prepare_cache()
+
+        self.assertFalse((Path.cwd() / "machine.txt").exists())
+        self.assertEqual(plugin.settings["last_computer_name"], main.platform.node())
+
     def test_an_old_install_is_not_wiped_again(self):
         """A settings file with the machine name predates the marker file."""
         file = self.create_cache_file()
