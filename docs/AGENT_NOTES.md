@@ -303,6 +303,70 @@ minute, then `python tools/perf/read_trace.py "<...>/Settings/Plugins/Browser Hi
 `tools/perf/watch_launches.ps1` records the same launches from outside, which is
 how to tell one press from two.
 
+## 4i. The context menu is asked for twice per press (owner trace, 2026-10-26)
+
+The owner's trace (Flow 2.1.4, Windows 10) is the fixture
+`tests/fixtures/trace-owner-windows-flow-2.1.4.jsonl`: 52 requests over about a
+minute, no search text or URLs in it.
+
+| | query | menu |
+|---|---|---|
+| requests | 34 | 18 (**nine pairs**) |
+| OS created -> Python starts | 36.6 | 37.2 |
+| imports done | 46.4 | 46.5 |
+| RPC -> discovery done | 24.1 | 0.0 |
+| discovery -> rendered | 8.7 | 0.2 |
+| whole process | 79.5 | 47.2 |
+
+**Every one of nine menu presses cost two processes**, 101-139 ms apart (median
+121). A person cannot open two menus in that time, and both returned the same
+two entries, so Flow asked twice for one press. That is the answer to "why does
+the menu feel slower than the list": the list is one process of 79.5 ms, the
+menu is two processes of 47.2 ms, ~121 ms apart.
+
+It is not a timeout retry on our side: each menu process finished in ~47 ms
+while the second did not start until ~121 ms, so the first had already answered.
+
+`read_trace.duplicates()` encodes this, and
+`tests/test_trace_fixture.py` asserts the nine pairs so the evidence cannot be
+lost. Next step is upstream, not here: Flow spawns two context_menu requests per
+press. Nothing a plugin does can merge them.
+
+## 4j. Answering before teardown: 10 ms on Linux, ~3 ms on Windows
+
+`flox` builds the answer from `__del__`, so a request completes during
+interpreter shutdown. `run()` now calls the same library entry (`Flox.call()`)
+and exits immediately, which drops the shutdown work.
+
+| | before | after |
+|---|---|---|
+| sandbox, query wall | 50.6 ms | 40.1 ms |
+| sandbox, menu wall | ~51 ms | 38.6 ms |
+| owner runner, query wall | 110.5 ms | 107.3 ms |
+| owner runner, menu wall | 72.4 ms | 71.3 ms |
+
+Windows tears the interpreter down in ~2-3 ms, so the win there is small; keep
+the change because it sends the JSON ~20 ms earlier and stops depending on
+shutdown order, not because of the wall-clock saving.
+
+## 4k. What is left, and what is not fixable in this repository
+
+Per menu request: 37 ms before Python exists (interpreter boot + antivirus scan
+of the executable), 41 ms of imports (of which `flox` is the bulk and cannot be
+removed), 0.4 ms of construction, and 0.15 ms of the plugin's own work.
+
+Levers that remain:
+
+* **Defender exclusions** for the Python interpreter and the plugin folder --
+  attacks the 37 ms before Python starts, which is the largest single slice.
+  User-side, and testable by A/B on their own machine.
+* **Fewer imports** -- our own modules are a few milliseconds of the 41 ms; the
+  bulk is `flox`, which the plugin cannot do without.
+* **Upstream**: one context_menu request per press instead of two (4i).
+
+Not a lever: anything inside the plugin's query or menu code, which together are
+under 9 ms of a 47 ms menu.
+
 ## 5. Measurement discipline
 
 Tests must pass on Windows as well as here. One trap already paid for: a
