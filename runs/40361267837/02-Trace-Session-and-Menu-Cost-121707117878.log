@@ -1,0 +1,523 @@
+﻿2026-10-26T16:40:02.8485532Z Current runner version: '2.338.1'
+2026-10-26T16:40:02.8490740Z Runner name: 'DESKTOP-SK3RC8N-session'
+2026-10-26T16:40:02.8491141Z Runner group name: 'Default'
+2026-10-26T16:40:02.8491601Z Machine name: 'DESKTOP-SK3RC8N'
+2026-10-26T16:40:02.8493623Z ##[group]GITHUB_TOKEN Permissions
+2026-10-26T16:40:02.8494949Z Contents: write
+2026-10-26T16:40:02.8495407Z Metadata: read
+2026-10-26T16:40:02.8495794Z ##[endgroup]
+2026-10-26T16:40:02.8497008Z Secret source: Actions
+2026-10-26T16:40:02.8497481Z Cache mode: write
+2026-10-26T16:40:02.8498215Z Prepare workflow directory
+2026-10-26T16:40:02.8819774Z Prepare all required actions
+2026-10-26T16:40:02.8845867Z Getting action download info
+2026-10-26T16:40:03.4548670Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-10-26T16:40:04.1107099Z Download action repository 'actions/setup-python@v5' (SHA:a26af69be951a213d495a4c3e4e4022e16d87065)
+2026-10-26T16:40:05.2422681Z Complete job name: Trace Session and Menu Cost
+2026-10-26T16:40:05.3127632Z ##[group]Run actions/checkout@v4
+2026-10-26T16:40:05.3128419Z with:
+2026-10-26T16:40:05.3128782Z   fetch-depth: 0
+2026-10-26T16:40:05.3129201Z   repository: JdotCarver/browser-history-v2
+2026-10-26T16:40:05.3133104Z   token: ***
+2026-10-26T16:40:05.3133511Z   ssh-strict: true
+2026-10-26T16:40:05.3133889Z   ssh-user: git
+2026-10-26T16:40:05.3134273Z   persist-credentials: true
+2026-10-26T16:40:05.3135184Z   clean: true
+2026-10-26T16:40:05.3135724Z   sparse-checkout-cone-mode: true
+2026-10-26T16:40:05.3136200Z   fetch-tags: false
+2026-10-26T16:40:05.3136591Z   show-progress: true
+2026-10-26T16:40:05.3136974Z   lfs: false
+2026-10-26T16:40:05.3137334Z   submodules: false
+2026-10-26T16:40:05.3137714Z   set-safe-directory: true
+2026-10-26T16:40:05.3138145Z   allow-unsafe-pr-checkout: false
+2026-10-26T16:40:05.3138814Z ##[endgroup]
+2026-10-26T16:40:05.4630886Z Syncing repository: JdotCarver/browser-history-v2
+2026-10-26T16:40:05.4632289Z ##[group]Getting Git version info
+2026-10-26T16:40:05.4633281Z Working directory is 'C:\actions-runners\JdotCarver-browser-history-v2-session\_work\browser-history-v2\browser-history-v2'
+2026-10-26T16:40:05.4877406Z [command]"C:\Program Files\Git\cmd\git.exe" version
+2026-10-26T16:40:05.5051469Z git version 2.53.0.windows.1
+2026-10-26T16:40:05.5093591Z ##[endgroup]
+2026-10-26T16:40:05.5107153Z Copying 'C:\Users\<user>\.gitconfig' to 'C:\actions-runners\JdotCarver-browser-history-v2-session\_work\_temp\b2a4d6c9-203f-44e0-b2a1-f335b16e448a\.gitconfig'
+2026-10-26T16:40:05.5122392Z Temporarily overriding HOME='C:\actions-runners\JdotCarver-browser-history-v2-session\_work\_temp\b2a4d6c9-203f-44e0-b2a1-f335b16e448a' before making global git config changes
+2026-10-26T16:40:05.5125320Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-26T16:40:05.5129569Z [command]"C:\Program Files\Git\cmd\git.exe" config --global --add safe.directory C:\actions-runners\JdotCarver-browser-history-v2-session\_work\browser-history-v2\browser-history-v2
+2026-10-26T16:40:05.5342136Z [command]"C:\Program Files\Git\cmd\git.exe" config --local --get remote.origin.url
+2026-10-26T16:40:05.5509844Z https://github.com/JdotCarver/browser-history-v2
+2026-10-26T16:40:05.5537608Z ##[group]Removing previously created refs, to avoid conflicts
+2026-10-26T16:40:05.5544424Z [command]"C:\Program Files\Git\cmd\git.exe" rev-parse --symbolic-full-name --verify --quiet HEAD
+2026-10-26T16:40:05.5707215Z refs/heads/arena/b80febd6-browser-history-v2
+2026-10-26T16:40:05.5737484Z [command]"C:\Program Files\Git\cmd\git.exe" checkout --detach
+2026-10-26T16:40:05.5945825Z HEAD is now at fd67820 Actions: request local-windows run
+2026-10-26T16:40:05.6416721Z ##[endgroup]
+2026-10-26T16:40:05.6421237Z [command]"C:\Program Files\Git\cmd\git.exe" submodule status
+2026-10-26T16:40:05.9641813Z ##[group]Cleaning the repository
+2026-10-26T16:40:05.9649280Z [command]"C:\Program Files\Git\cmd\git.exe" clean -ffdx
+2026-10-26T16:40:05.9845789Z Removing plugin/__pycache__/
+2026-10-26T16:40:05.9847151Z Removing tests/__pycache__/
+2026-10-26T16:40:05.9847388Z Removing tools/github_actions_runner/__pycache__/
+2026-10-26T16:40:05.9847636Z Removing tools/perf/__pycache__/
+2026-10-26T16:40:05.9876497Z [command]"C:\Program Files\Git\cmd\git.exe" reset --hard HEAD
+2026-10-26T16:40:06.0125667Z HEAD is now at fd67820 Actions: request local-windows run
+2026-10-26T16:40:06.0148801Z ##[endgroup]
+2026-10-26T16:40:06.0152064Z ##[group]Disabling automatic garbage collection
+2026-10-26T16:40:06.0158894Z [command]"C:\Program Files\Git\cmd\git.exe" config --local gc.auto 0
+2026-10-26T16:40:06.0352942Z ##[endgroup]
+2026-10-26T16:40:06.0353270Z ##[group]Setting up auth
+2026-10-26T16:40:06.0360997Z [command]"C:\Program Files\Git\cmd\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-10-26T16:40:06.0554237Z [command]"C:\Program Files\Git\cmd\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-10-26T16:40:06.3779062Z [command]"C:\Program Files\Git\cmd\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-26T16:40:06.3982248Z [command]"C:\Program Files\Git\cmd\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-10-26T16:40:06.7208526Z [command]"C:\Program Files\Git\cmd\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-26T16:40:06.7402167Z [command]"C:\Program Files\Git\cmd\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-10-26T16:40:07.0656794Z [command]"C:\Program Files\Git\cmd\git.exe" config --local http.https://github.com/.extraheader "AUTHORIZATION: basic ***"
+2026-10-26T16:40:07.0910413Z ##[endgroup]
+2026-10-26T16:40:07.0910768Z ##[group]Fetching the repository
+2026-10-26T16:40:07.0919449Z [command]"C:\Program Files\Git\cmd\git.exe" -c protocol.version=2 fetch --prune --no-recurse-submodules origin +refs/heads/*:refs/remotes/origin/* +refs/tags/*:refs/tags/*
+2026-10-26T16:40:08.0256040Z From https://github.com/JdotCarver/browser-history-v2
+2026-10-26T16:40:08.0256395Z    3b0dee2..d53799b  actions-logs -> origin/actions-logs
+2026-10-26T16:40:08.0258981Z    fd67820..36f7f54  arena/b80febd6-browser-history-v2 -> origin/arena/b80febd6-browser-history-v2
+2026-10-26T16:40:08.0442846Z [command]"C:\Program Files\Git\cmd\git.exe" branch --list --remote origin/arena/b80febd6-browser-history-v2
+2026-10-26T16:40:08.0637177Z   origin/arena/b80febd6-browser-history-v2
+2026-10-26T16:40:08.0665164Z [command]"C:\Program Files\Git\cmd\git.exe" rev-parse refs/remotes/origin/arena/b80febd6-browser-history-v2
+2026-10-26T16:40:08.0839737Z 36f7f544436bfab5b10ac17c70018bfa49bba538
+2026-10-26T16:40:08.0867213Z ##[endgroup]
+2026-10-26T16:40:08.0867995Z ##[group]Determining the checkout info
+2026-10-26T16:40:08.0868798Z ##[endgroup]
+2026-10-26T16:40:08.0874094Z [command]"C:\Program Files\Git\cmd\git.exe" sparse-checkout disable
+2026-10-26T16:40:08.1117068Z [command]"C:\Program Files\Git\cmd\git.exe" config --local --unset-all extensions.worktreeConfig
+2026-10-26T16:40:08.1348313Z ##[group]Checking out the ref
+2026-10-26T16:40:08.1354848Z [command]"C:\Program Files\Git\cmd\git.exe" checkout --progress --force -B arena/b80febd6-browser-history-v2 refs/remotes/origin/arena/b80febd6-browser-history-v2
+2026-10-26T16:40:08.1687248Z Previous HEAD position was fd67820 Actions: request local-windows run
+2026-10-26T16:40:08.1757375Z Switched to and reset branch 'arena/b80febd6-browser-history-v2'
+2026-10-26T16:40:08.1780361Z branch 'arena/b80febd6-browser-history-v2' set up to track 'origin/arena/b80febd6-browser-history-v2'.
+2026-10-26T16:40:08.1780805Z Your branch is up to date with 'origin/arena/b80febd6-browser-history-v2'.
+2026-10-26T16:40:08.1804532Z ##[endgroup]
+2026-10-26T16:40:08.2017818Z [command]"C:\Program Files\Git\cmd\git.exe" log -1 --format=%H
+2026-10-26T16:40:08.2190072Z 36f7f544436bfab5b10ac17c70018bfa49bba538
+2026-10-26T16:40:08.2439759Z ##[group]Run $resolved = $null
+2026-10-26T16:40:08.2439999Z $resolved = $null
+2026-10-26T16:40:08.2440172Z foreach ($candidate in @('py', 'python', 'python3')) {
+2026-10-26T16:40:08.2440405Z   $command = Get-Command $candidate -ErrorAction SilentlyContinue
+2026-10-26T16:40:08.2440610Z   if (-not $command) { continue }
+2026-10-26T16:40:08.2440841Z   $executable = & $command.Source -c "import sys; print(sys.executable)" 2>$null
+2026-10-26T16:40:08.2441065Z   if ($LASTEXITCODE -eq 0 -and $executable) {
+2026-10-26T16:40:08.2441220Z     $resolved = "$executable".Trim()
+2026-10-26T16:40:08.2441347Z     break
+2026-10-26T16:40:08.2441438Z   }
+2026-10-26T16:40:08.2441524Z }
+2026-10-26T16:40:08.2441683Z if (-not $resolved) { throw "No usable Python found on this runner." }
+2026-10-26T16:40:08.2441957Z "PYTHON=$resolved" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+2026-10-26T16:40:08.2442156Z & $resolved --version
+2026-10-26T16:40:08.2446674Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-10-26T16:40:08.2446860Z ##[endgroup]
+2026-10-26T16:40:08.4815147Z Python 3.13.14
+2026-10-26T16:40:08.5343060Z ##[group]Run & $env:PYTHON -c "import sqlite3, platform, sys; print('python', sys.version.split()[0], '| sqlite', sqlite3.sqlite_version, '|', platform.platform())"
+2026-10-26T16:40:08.5343627Z & $env:PYTHON -c "import sqlite3, platform, sys; print('python', sys.version.split()[0], '| sqlite', sqlite3.sqlite_version, '|', platform.platform())"
+2026-10-26T16:40:08.5346089Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-10-26T16:40:08.5346268Z env:
+2026-10-26T16:40:08.5346438Z   PYTHON: C:\Users\<user>\AppData\Local\Programs\Python\Python313\python.exe
+2026-10-26T16:40:08.5346619Z ##[endgroup]
+2026-10-26T16:40:08.7442374Z python 3.13.14 | sqlite 3.50.4 | Windows-10-10.0.19045-SP0
+2026-10-26T16:40:08.8105378Z ##[group]Run & $env:PYTHON tools/github_actions_runner/probe.py .github/runner-request.toml
+2026-10-26T16:40:08.8105748Z & $env:PYTHON tools/github_actions_runner/probe.py .github/runner-request.toml
+2026-10-26T16:40:08.8108724Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-10-26T16:40:08.8108889Z env:
+2026-10-26T16:40:08.8109037Z   PYTHON: C:\Users\<user>\AppData\Local\Programs\Python\Python313\python.exe
+2026-10-26T16:40:08.8109214Z ##[endgroup]
+2026-10-26T16:40:09.0582469Z {
+2026-10-26T16:40:09.0582623Z   "architecture": "AMD64",
+2026-10-26T16:40:09.0582820Z   "commit": "36f7f544436bfab5b10ac17c70018bfa49bba538",
+2026-10-26T16:40:09.0583025Z   "job_name": "Trace Session and Menu Cost",
+2026-10-26T16:40:09.0583215Z   "operating_system": "Windows-10-10.0.19045-SP0",
+2026-10-26T16:40:09.0583409Z   "python_version": "3.13.14",
+2026-10-26T16:40:09.0583572Z   "repository": "JdotCarver/browser-history-v2",
+2026-10-26T16:40:09.0583807Z   "request_id": "088c0448-a3f1-4896-8464-ceb0b363a5ef",
+2026-10-26T16:40:09.0583971Z   "run_id": "40361267837",
+2026-10-26T16:40:09.0584113Z   "runner_environment": "self-hosted",
+2026-10-26T16:40:09.0584281Z   "runner_name": "DESKTOP-SK3RC8N-session",
+2026-10-26T16:40:09.0584437Z   "target": "local-windows"
+2026-10-26T16:40:09.0584549Z }
+2026-10-26T16:40:09.1287885Z ##[group]Run & $env:PYTHON -m unittest discover -s tests -p "test_*.py" -v
+2026-10-26T16:40:09.1288203Z & $env:PYTHON -m unittest discover -s tests -p "test_*.py" -v
+2026-10-26T16:40:09.1290326Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-10-26T16:40:09.1290505Z env:
+2026-10-26T16:40:09.1290662Z   PYTHON: C:\Users\<user>\AppData\Local\Programs\Python\Python313\python.exe
+2026-10-26T16:40:09.1290980Z ##[endgroup]
+2026-10-26T16:40:09.4543906Z test_chromium_uses_the_favicons_file (test_favicons.BrowserIconPaths.test_chromium_uses_the_favicons_file) ... ok
+2026-10-26T16:40:09.4551114Z test_firefox_uses_favicons_sqlite (test_favicons.BrowserIconPaths.test_firefox_uses_favicons_sqlite) ... ok
+2026-10-26T16:40:09.4554317Z test_no_store_means_none (test_favicons.BrowserIconPaths.test_no_store_means_none) ... ok
+2026-10-26T16:40:09.4761805Z test_a_damaged_index_is_survivable (test_favicons.Caching.test_a_damaged_index_is_survivable) ... ok
+2026-10-26T16:40:09.5019319Z test_a_deleted_icon_file_is_fetched_again (test_favicons.Caching.test_a_deleted_icon_file_is_fetched_again) ... ok
+2026-10-26T16:40:09.5387258Z test_identical_images_are_written_once (test_favicons.Caching.test_identical_images_are_written_once) ... ok
+2026-10-26T16:40:09.5583640Z test_the_cache_survives_a_new_process (test_favicons.Caching.test_the_cache_survives_a_new_process) ... ok
+2026-10-26T16:40:09.5763205Z test_the_database_is_not_opened_again_for_a_known_url (test_favicons.Caching.test_the_database_is_not_opened_again_for_a_known_url) ... ok
+2026-10-26T16:40:09.6307970Z test_the_index_stays_bounded (test_favicons.Caching.test_the_index_stays_bounded) ... ok
+2026-10-26T16:40:09.6506663Z test_an_exact_page_url_is_resolved_to_a_file (test_favicons.ChromiumIcons.test_an_exact_page_url_is_resolved_to_a_file) ... ok
+2026-10-26T16:40:09.6676160Z test_an_unknown_site_resolves_to_nothing (test_favicons.ChromiumIcons.test_an_unknown_site_resolves_to_nothing) ... ok
+2026-10-26T16:40:09.6677096Z test_another_page_on_the_same_site_borrows_the_icon (test_favicons.ChromiumIcons.test_another_page_on_the_same_site_borrows_the_icon)
+2026-10-26T16:40:09.6863536Z Chromium records an icon per visited URL, not per site. ... ok
+2026-10-26T16:40:09.7051731Z test_the_nearest_size_to_the_preferred_one_wins (test_favicons.ChromiumIcons.test_the_nearest_size_to_the_preferred_one_wins) ... ok
+2026-10-26T16:40:09.7055548Z test_a_browser_without_an_icon_store_is_silent (test_favicons.Failures.test_a_browser_without_an_icon_store_is_silent) ... ok
+2026-10-26T16:40:09.7099672Z test_a_corrupt_database_yields_no_icons_and_no_raise (test_favicons.Failures.test_a_corrupt_database_yields_no_icons_and_no_raise) ... ok
+2026-10-26T16:40:09.7165018Z test_a_database_missing_the_tables_yields_no_icons (test_favicons.Failures.test_a_database_missing_the_tables_yields_no_icons) ... ok
+2026-10-26T16:40:09.7168810Z test_an_item_without_a_browser_is_skipped (test_favicons.Failures.test_an_item_without_a_browser_is_skipped) ... ok
+2026-10-26T16:40:09.7172010Z test_nothing_to_resolve (test_favicons.Failures.test_nothing_to_resolve) ... ok
+2026-10-26T16:40:09.7172323Z test_an_svg_icon_is_skipped (test_favicons.FirefoxIcons.test_an_svg_icon_is_skipped)
+2026-10-26T16:40:09.7341412Z Firefox stores SVG icons, which Flow Launcher cannot draw. ... ok
+2026-10-26T16:40:09.7535915Z test_icons_come_from_the_firefox_store (test_favicons.FirefoxIcons.test_icons_come_from_the_firefox_store) ... ok
+2026-10-26T16:40:09.7536595Z test_no_like_lookups (test_favicons.QueryShape.test_no_like_lookups)
+2026-10-26T16:40:09.7702729Z LIKE cannot use the page_url index, so it becomes a full scan. ... ok
+2026-10-26T16:40:09.7877249Z test_one_seek_per_site_rather_than_one_scan (test_favicons.QueryShape.test_one_seek_per_site_rather_than_one_scan) ... ok
+2026-10-26T16:40:09.7877704Z test_anything_else_is_refused (test_favicons.Sniffing.test_anything_else_is_refused) ... ok
+2026-10-26T16:40:09.7879347Z test_recognised_formats (test_favicons.Sniffing.test_recognised_formats) ... ok
+2026-10-26T16:40:09.7879783Z test_absolute_date_uses_the_chosen_clock (test_formatting.ClockFormat.test_absolute_date_uses_the_chosen_clock) ... ok
+2026-10-26T16:40:09.7881647Z test_system_follows_the_locale (test_formatting.ClockFormat.test_system_follows_the_locale) ... ok
+2026-10-26T16:40:09.7882427Z test_twelve_hour_keeps_the_leading_zero (test_formatting.ClockFormat.test_twelve_hour_keeps_the_leading_zero) ... ok
+2026-10-26T16:40:09.7883401Z test_twenty_four_hour (test_formatting.ClockFormat.test_twenty_four_hour) ... ok
+2026-10-26T16:40:09.7884204Z test_default_subtitle_matches_the_original_format (test_formatting.DefaultsAreUnchanged.test_default_subtitle_matches_the_original_format) ... ok
+2026-10-26T16:40:09.7885139Z test_defaults_are_the_module_constants (test_formatting.DefaultsAreUnchanged.test_defaults_are_the_module_constants) ... ok
+2026-10-26T16:40:09.7885767Z test_a_bare_www_host_is_not_mangled (test_formatting.DomainDisplay.test_a_bare_www_host_is_not_mangled) ... ok
+2026-10-26T16:40:09.7886167Z test_credentials_are_dropped (test_formatting.DomainDisplay.test_credentials_are_dropped) ... ok
+2026-10-26T16:40:09.7886527Z test_full_url_is_the_default (test_formatting.DomainDisplay.test_full_url_is_the_default) ... ok
+2026-10-26T16:40:09.7886926Z test_hosts_without_a_site_name_stay_whole (test_formatting.DomainDisplay.test_hosts_without_a_site_name_stay_whole) ... ok
+2026-10-26T16:40:09.7887389Z test_international_names_are_only_lowercased (test_formatting.DomainDisplay.test_international_names_are_only_lowercased) ... ok
+2026-10-26T16:40:09.7888486Z test_port_is_kept (test_formatting.DomainDisplay.test_port_is_kept) ... ok
+2026-10-26T16:40:09.7888864Z test_scheme_is_lowercased_out_of_the_way (test_formatting.DomainDisplay.test_scheme_is_lowercased_out_of_the_way) ... ok
+2026-10-26T16:40:09.7889256Z test_subdomains_are_kept (test_formatting.DomainDisplay.test_subdomains_are_kept) ... ok
+2026-10-26T16:40:09.7889581Z test_www_is_dropped (test_formatting.DomainDisplay.test_www_is_dropped) ... ok
+2026-10-26T16:40:09.7889974Z test_a_future_visit_falls_back_to_a_plain_date (test_formatting.RelativeDates.test_a_future_visit_falls_back_to_a_plain_date) ... ok
+2026-10-26T16:40:09.7890400Z test_a_week_or_more_drops_the_time (test_formatting.RelativeDates.test_a_week_or_more_drops_the_time) ... ok
+2026-10-26T16:40:09.7890810Z test_earlier_this_week_names_the_day (test_formatting.RelativeDates.test_earlier_this_week_names_the_day) ... ok
+2026-10-26T16:40:09.7891130Z test_minutes (test_formatting.RelativeDates.test_minutes) ... ok
+2026-10-26T16:40:09.7891449Z test_previous_years_keep_the_year (test_formatting.RelativeDates.test_previous_years_keep_the_year) ... ok
+2026-10-26T16:40:09.7891881Z test_relative_dates_respect_the_clock_setting (test_formatting.RelativeDates.test_relative_dates_respect_the_clock_setting) ... ok
+2026-10-26T16:40:09.7892282Z test_today_shows_the_time (test_formatting.RelativeDates.test_today_shows_the_time) ... ok
+2026-10-26T16:40:09.7892601Z test_under_a_minute (test_formatting.RelativeDates.test_under_a_minute) ... ok
+2026-10-26T16:40:09.7892870Z test_yesterday (test_formatting.RelativeDates.test_yesterday) ... ok
+2026-10-26T16:40:09.7893278Z test_yesterday_is_a_calendar_day_not_twenty_four_hours (test_formatting.RelativeDates.test_yesterday_is_a_calendar_day_not_twenty_four_hours) ... ok
+2026-10-26T16:40:09.7893664Z test_bracketed (test_formatting.SubtitleLayout.test_bracketed) ... ok
+2026-10-26T16:40:09.7893913Z test_dashed (test_formatting.SubtitleLayout.test_dashed) ... ok
+2026-10-26T16:40:09.7894231Z test_the_requested_look_end_to_end (test_formatting.SubtitleLayout.test_the_requested_look_end_to_end) ... ok
+2026-10-26T16:40:09.7894647Z test_a_search_never_walks_the_visit_index (test_history_query.ChromiumPlanTests.test_a_search_never_walks_the_visit_index)
+2026-10-26T16:40:09.8206847Z One index entry costs a join into `urls`; on a 100k-URL profile that is ... ok
+2026-10-26T16:40:09.8534629Z test_an_unfiltered_listing_still_agrees_with_the_exhaustive_search (test_history_query.ChromiumPlanTests.test_an_unfiltered_listing_still_agrees_with_the_exhaustive_search) ... ok
+2026-10-26T16:40:09.8535813Z test_the_unfiltered_listing_tries_recent_visits_first (test_history_query.ChromiumPlanTests.test_the_unfiltered_listing_tries_recent_visits_first)
+2026-10-26T16:40:09.8846471Z The newest visits are all matches, so the walk fills the page at once. ... ok
+2026-10-26T16:40:09.8848749Z test_absent_term_falls_back_to_one_full_scan (test_history_query.ChromiumQueryTests.test_absent_term_falls_back_to_one_full_scan)
+2026-10-26T16:40:09.9164548Z A term matching nothing must not walk every recency window first. ... ok
+2026-10-26T16:40:09.9669262Z test_agrees_with_exhaustive_search (test_history_query.ChromiumQueryTests.test_agrees_with_exhaustive_search) ... ok
+2026-10-26T16:40:10.0008324Z test_blocked_domains_are_excluded (test_history_query.ChromiumQueryTests.test_blocked_domains_are_excluded) ... ok
+2026-10-26T16:40:10.0334111Z test_every_search_term_must_match (test_history_query.ChromiumQueryTests.test_every_search_term_must_match) ... ok
+2026-10-26T16:40:10.0639237Z test_limit_is_respected (test_history_query.ChromiumQueryTests.test_limit_is_respected) ... ok
+2026-10-26T16:40:10.0640110Z test_recent_history_resolves_from_the_newest_window (test_history_query.ChromiumQueryTests.test_recent_history_resolves_from_the_newest_window)
+2026-10-26T16:40:10.0964819Z When recent history fills the page, one cheap statement is enough. ... ok
+2026-10-26T16:40:10.1272160Z test_returns_one_row_per_url_newest_first (test_history_query.ChromiumQueryTests.test_returns_one_row_per_url_newest_first) ... ok
+2026-10-26T16:40:10.1272655Z test_works_without_a_time_index (test_history_query.ChromiumQueryTests.test_works_without_a_time_index)
+2026-10-26T16:40:10.1556932Z An old or unusual profile has no time index; the scan must still be exact. ... ok
+2026-10-26T16:40:10.1557372Z test_absent_term_falls_back_to_one_full_scan (test_history_query.FirefoxQueryTests.test_absent_term_falls_back_to_one_full_scan)
+2026-10-26T16:40:10.1837286Z A term matching nothing must not walk every recency window first. ... ok
+2026-10-26T16:40:10.2288534Z test_agrees_with_exhaustive_search (test_history_query.FirefoxQueryTests.test_agrees_with_exhaustive_search) ... ok
+2026-10-26T16:40:10.2574487Z test_blocked_domains_are_excluded (test_history_query.FirefoxQueryTests.test_blocked_domains_are_excluded) ... ok
+2026-10-26T16:40:10.2870328Z test_every_search_term_must_match (test_history_query.FirefoxQueryTests.test_every_search_term_must_match) ... ok
+2026-10-26T16:40:10.3138056Z test_limit_is_respected (test_history_query.FirefoxQueryTests.test_limit_is_respected) ... ok
+2026-10-26T16:40:10.3138912Z test_recent_history_resolves_from_the_newest_window (test_history_query.FirefoxQueryTests.test_recent_history_resolves_from_the_newest_window)
+2026-10-26T16:40:10.3417028Z When recent history fills the page, one cheap statement is enough. ... ok
+2026-10-26T16:40:10.3680245Z test_returns_one_row_per_url_newest_first (test_history_query.FirefoxQueryTests.test_returns_one_row_per_url_newest_first) ... ok
+2026-10-26T16:40:10.3681095Z test_works_without_a_time_index (test_history_query.FirefoxQueryTests.test_works_without_a_time_index)
+2026-10-26T16:40:10.3927694Z An old or unusual profile has no time index; the scan must still be exact. ... ok
+2026-10-26T16:40:10.3928182Z test_chromium_window_start_is_encoded_like_the_database (test_history_query.TimestampEncodingTests.test_chromium_window_start_is_encoded_like_the_database) ... ok
+2026-10-26T16:40:10.3928728Z test_unix_microseconds_window_start (test_history_query.TimestampEncodingTests.test_unix_microseconds_window_start) ... ok
+2026-10-26T16:40:10.3929132Z test_a_typo_is_a_miss_today (test_match_report.CurrentMatcher.test_a_typo_is_a_miss_today) ... ok
+2026-10-26T16:40:10.3929468Z test_case_is_ignored (test_match_report.CurrentMatcher.test_case_is_ignored) ... ok
+2026-10-26T16:40:10.3929946Z test_every_word_must_appear (test_match_report.CurrentMatcher.test_every_word_must_appear) ... ok
+2026-10-26T16:40:10.3930388Z test_abbreviations_reach_the_page (test_match_report.LooseMatcher.test_abbreviations_reach_the_page) ... ok
+2026-10-26T16:40:10.3930754Z test_nonsense_still_fails (test_match_report.LooseMatcher.test_nonsense_still_fails) ... ok
+2026-10-26T16:40:10.3931083Z test_spaces_are_ignored (test_match_report.LooseMatcher.test_spaces_are_ignored) ... ok
+2026-10-26T16:40:10.3931501Z test_characters_in_order (test_match_report.Subsequence.test_characters_in_order) ... ok
+2026-10-26T16:40:10.3931856Z test_out_of_order_is_not_a_match (test_match_report.Subsequence.test_out_of_order_is_not_a_match) ... ok
+2026-10-26T16:40:10.3932272Z test_a_letter_is_dropped_and_two_are_swapped (test_match_report.TypoVariants.test_a_letter_is_dropped_and_two_are_swapped) ... ok
+2026-10-26T16:40:10.3932704Z test_short_words_are_left_alone (test_match_report.TypoVariants.test_short_words_are_left_alone) ... ok
+2026-10-26T16:40:10.3933102Z test_variants_differ_from_the_original (test_match_report.TypoVariants.test_variants_differ_from_the_original) ... ok
+2026-10-26T16:40:10.4228629Z test_a_different_machine_wipes_it_once (test_plugin_main.CachePreparationTests.test_a_different_machine_wipes_it_once) ... ok
+2026-10-26T16:40:10.4249564Z test_a_first_run_records_the_machine (test_plugin_main.CachePreparationTests.test_a_first_run_records_the_machine) ... ok
+2026-10-26T16:40:10.4311441Z test_a_later_run_on_the_same_machine_leaves_the_cache_alone (test_plugin_main.CachePreparationTests.test_a_later_run_on_the_same_machine_leaves_the_cache_alone) ... ok
+2026-10-26T16:40:10.4312454Z test_an_old_install_is_not_wiped_again (test_plugin_main.CachePreparationTests.test_an_old_install_is_not_wiped_again)
+2026-10-26T16:40:10.4326739Z A settings file with the machine name predates the marker file. ... ok
+2026-10-26T16:40:10.4354259Z test_collection_runs_at_most_once_a_day (test_plugin_main.CachePreparationTests.test_collection_runs_at_most_once_a_day) ... ok
+2026-10-26T16:40:10.4381221Z test_files_older_than_a_week_are_collected (test_plugin_main.CachePreparationTests.test_files_older_than_a_week_are_collected) ... ok
+2026-10-26T16:40:10.4406619Z test_keeping_the_cache_survives_a_machine_change (test_plugin_main.CachePreparationTests.test_keeping_the_cache_survives_a_machine_change) ... ok
+2026-10-26T16:40:10.4407149Z test_no_settings_path_records_nothing_on_disk (test_plugin_main.CachePreparationTests.test_no_settings_path_records_nothing_on_disk)
+2026-10-26T16:40:10.4422031Z An empty settings path is the working directory, not somewhere to write. ... ok
+2026-10-26T16:40:10.4422541Z test_copying_works_with_the_import_deferred (test_plugin_main.ClipboardTests.test_copying_works_with_the_import_deferred) ... ok
+2026-10-26T16:40:10.4423026Z test_the_module_does_not_import_pyperclip_on_load (test_plugin_main.ClipboardTests.test_the_module_does_not_import_pyperclip_on_load)
+2026-10-26T16:40:10.4423432Z Loading the clipboard module costs time on every keystroke, including menus. ... ok
+2026-10-26T16:40:10.4423859Z test_combined_history_is_capped_by_the_ui_limit (test_plugin_main.CombinedHistoryTests.test_combined_history_is_capped_by_the_ui_limit) ... ok
+2026-10-26T16:40:10.4424401Z test_newest_row_wins_when_profiles_disagree_about_a_url (test_plugin_main.CombinedHistoryTests.test_newest_row_wins_when_profiles_disagree_about_a_url)
+2026-10-26T16:40:10.4424799Z Two browsers can both know a URL; the more recent visit must be shown. ... ok
+2026-10-26T16:40:10.4431842Z test_a_query_with_no_browsers_still_explains_itself (test_plugin_main.LazyDiscoveryTests.test_a_query_with_no_browsers_still_explains_itself) ... ok
+2026-10-26T16:40:10.4437573Z test_constructing_the_plugin_explores_nothing (test_plugin_main.LazyDiscoveryTests.test_constructing_the_plugin_explores_nothing) ... ok
+2026-10-26T16:40:10.4440647Z test_the_context_menu_is_built_without_browsers (test_plugin_main.LazyDiscoveryTests.test_the_context_menu_is_built_without_browsers) ... ok
+2026-10-26T16:40:10.4448857Z test_the_first_query_discovers_and_the_second_does_not (test_plugin_main.LazyDiscoveryTests.test_the_first_query_discovers_and_the_second_does_not) ... ok
+2026-10-26T16:40:10.4449886Z test_a_broken_icon_lookup_never_costs_the_results (test_plugin_main.QueryRenderingTests.test_a_broken_icon_lookup_never_costs_the_results) ... ok
+2026-10-26T16:40:10.4450864Z test_a_failing_search_shows_the_error_instead_of_crashing (test_plugin_main.QueryRenderingTests.test_a_failing_search_shows_the_error_instead_of_crashing) ... ok
+2026-10-26T16:40:10.4451582Z test_a_url_without_an_icon_keeps_the_glyph (test_plugin_main.QueryRenderingTests.test_a_url_without_an_icon_keeps_the_glyph) ... ok
+2026-10-26T16:40:10.4452056Z test_an_icon_replaces_the_glyph (test_plugin_main.QueryRenderingTests.test_an_icon_replaces_the_glyph) ... ok
+2026-10-26T16:40:10.4452487Z test_display_settings_reach_the_subtitle (test_plugin_main.QueryRenderingTests.test_display_settings_reach_the_subtitle)
+2026-10-26T16:40:10.4452841Z The four display settings are wired through, not just defined. ... ok
+2026-10-26T16:40:10.4453186Z test_favicons_are_off_unless_asked_for (test_plugin_main.QueryRenderingTests.test_favicons_are_off_unless_asked_for)
+2026-10-26T16:40:10.4453517Z The default costs nothing: the icon store is never consulted. ... ok
+2026-10-26T16:40:10.4453866Z test_no_browsers_shows_an_explanation (test_plugin_main.QueryRenderingTests.test_no_browsers_shows_an_explanation) ... ok
+2026-10-26T16:40:10.4454377Z test_results_are_rendered_with_their_timestamp_and_url (test_plugin_main.QueryRenderingTests.test_results_are_rendered_with_their_timestamp_and_url) ... ok
+2026-10-26T16:40:10.4454930Z test_skipped_profiles_are_reported_above_the_results (test_plugin_main.QueryRenderingTests.test_skipped_profiles_are_reported_above_the_results) ... ok
+2026-10-26T16:40:10.4455466Z test_a_lower_history_limit_still_wins (test_plugin_main.RowBudgetTests.test_a_lower_history_limit_still_wins) ... ok
+2026-10-26T16:40:10.4455899Z test_budget_is_capped_by_what_the_ui_can_show (test_plugin_main.RowBudgetTests.test_budget_is_capped_by_what_the_ui_can_show)
+2026-10-26T16:40:10.4456247Z Reading 1000 rows per profile for a 500-row display wastes work. ... ok
+2026-10-26T16:40:10.4456585Z test_equal_limits_are_unchanged (test_plugin_main.RowBudgetTests.test_equal_limits_are_unchanged) ... ok
+2026-10-26T16:40:10.4456986Z test_search_term_reaches_the_profiles (test_plugin_main.RowBudgetTests.test_search_term_reaches_the_profiles) ... ok
+2026-10-26T16:40:10.4497443Z test_a_menu_after_a_query_is_a_burst (test_read_trace.Bursts.test_a_menu_after_a_query_is_a_burst) ... ok
+2026-10-26T16:40:10.4540071Z test_separate_actions_are_not (test_read_trace.Bursts.test_separate_actions_are_not) ... ok
+2026-10-26T16:40:10.4582695Z test_two_processes_for_one_press_is_a_burst (test_read_trace.Bursts.test_two_processes_for_one_press_is_a_burst) ... ok
+2026-10-26T16:40:10.4588416Z test_a_missing_trace_is_explained_not_crashed (test_read_trace.CommandLine.test_a_missing_trace_is_explained_not_crashed) ... ok
+2026-10-26T16:40:10.4598718Z test_an_empty_trace_is_explained (test_read_trace.CommandLine.test_an_empty_trace_is_explained) ... ok
+2026-10-26T16:40:10.4644126Z test_gaps_are_milliseconds_between_successive (test_read_trace.Gaps.test_gaps_are_milliseconds_between_successive) ... ok
+2026-10-26T16:40:10.4686987Z test_gaps_can_be_filtered_by_method (test_read_trace.Gaps.test_gaps_can_be_filtered_by_method) ... ok
+2026-10-26T16:40:10.4730540Z test_one_record_has_no_gaps (test_read_trace.Gaps.test_one_record_has_no_gaps) ... ok
+2026-10-26T16:40:10.4769491Z test_damaged_lines_are_skipped (test_read_trace.Loading.test_damaged_lines_are_skipped) ... ok
+2026-10-26T16:40:10.4815027Z test_records_come_back_in_time_order (test_read_trace.Loading.test_records_come_back_in_time_order) ... ok
+2026-10-26T16:40:10.4815524Z test_empty_input (test_results.NewestUniqueTests.test_empty_input) ... ok
+2026-10-26T16:40:10.4816422Z test_keeps_the_most_recent_row_for_a_repeated_url (test_results.NewestUniqueTests.test_keeps_the_most_recent_row_for_a_repeated_url) ... ok
+2026-10-26T16:40:10.4816908Z test_orders_newest_first_and_truncates (test_results.NewestUniqueTests.test_orders_newest_first_and_truncates) ... ok
+2026-10-26T16:40:10.4819610Z test_a_broken_profile_warns_instead_of_hiding_the_others (test_results.ReadProfilesTests.test_a_broken_profile_warns_instead_of_hiding_the_others) ... ok
+2026-10-26T16:40:10.4821119Z test_a_profile_that_vanished_is_skipped_silently (test_results.ReadProfilesTests.test_a_profile_that_vanished_is_skipped_silently) ... ok
+2026-10-26T16:40:10.4821668Z test_no_profiles (test_results.ReadProfilesTests.test_no_profiles) ... ok
+2026-10-26T16:40:10.4824140Z test_reads_every_profile_in_parallel (test_results.ReadProfilesTests.test_reads_every_profile_in_parallel) ... ok
+2026-10-26T16:40:10.4826657Z test_results_are_merged_one_row_per_url (test_results.ReadProfilesTests.test_results_are_merged_one_row_per_url) ... ok
+2026-10-26T16:40:10.4827134Z test_single_profile_does_not_start_a_thread_pool (test_results.ReadProfilesTests.test_single_profile_does_not_start_a_thread_pool) ... ok
+2026-10-26T16:40:10.4928419Z test_a_known_creation_time_becomes_a_phase (test_tracing.CreationTime.test_a_known_creation_time_becomes_a_phase) ... ok
+2026-10-26T16:40:10.4977174Z test_without_a_creation_time_the_phase_is_simply_absent (test_tracing.CreationTime.test_without_a_creation_time_the_phase_is_simply_absent) ... ok
+2026-10-26T16:40:10.4980343Z test_marks_are_harmless (test_tracing.Disabled.test_marks_are_harmless) ... ok
+2026-10-26T16:40:10.4984231Z test_nothing_is_written (test_tracing.Disabled.test_nothing_is_written) ... ok
+2026-10-26T16:40:10.5032082Z test_a_broken_path_never_raises (test_tracing.Enabled.test_a_broken_path_never_raises) ... ok
+2026-10-26T16:40:10.5085981Z test_a_wrong_method_timestamp_is_simply_missing (test_tracing.Enabled.test_a_wrong_method_timestamp_is_simply_missing) ... ok
+2026-10-26T16:40:10.5137264Z test_an_empty_directory_is_created (test_tracing.Enabled.test_an_empty_directory_is_created) ... ok
+2026-10-26T16:40:10.5137910Z test_no_search_text_is_recorded (test_tracing.Enabled.test_no_search_text_is_recorded)
+2026-10-26T16:40:10.5187544Z A trace is numbers and a method name: nothing a user typed. ... ok
+2026-10-26T16:40:10.5272797Z test_one_line_per_request (test_tracing.Enabled.test_one_line_per_request) ... ok
+2026-10-26T16:40:10.5731655Z test_the_file_stays_bounded (test_tracing.Enabled.test_the_file_stays_bounded) ... ok
+2026-10-26T16:40:10.5782437Z test_the_record_says_what_happened (test_tracing.Enabled.test_the_record_says_what_happened) ... ok
+2026-10-26T16:40:10.5783646Z test_the_entry_point_records_when_the_process_started (test_tracing.ProcessStart.test_the_entry_point_records_when_the_process_started) ... ok
+2026-10-26T16:40:10.5784137Z 
+2026-10-26T16:40:10.5784341Z ----------------------------------------------------------------------
+2026-10-26T16:40:10.5784696Z Ran 144 tests in 1.126s
+2026-10-26T16:40:10.5784840Z 
+2026-10-26T16:40:10.5784936Z OK
+2026-10-26T16:40:10.5785568Z No trace at \nonexistent\requests.jsonl. Turn on 'Trace Requests', use Flow, then run this again.
+2026-10-26T16:40:10.5786358Z The trace is empty: no request has been recorded yet.
+2026-10-26T16:40:10.6560024Z ##[group]Run & $env:PYTHON -m unittest discover -s tools/github_actions_runner -p "test_*.py" -v
+2026-10-26T16:40:10.6560365Z & $env:PYTHON -m unittest discover -s tools/github_actions_runner -p "test_*.py" -v
+2026-10-26T16:40:10.6562656Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-10-26T16:40:10.6562823Z env:
+2026-10-26T16:40:10.6562980Z   PYTHON: C:\Users\<user>\AppData\Local\Programs\Python\Python313\python.exe
+2026-10-26T16:40:10.6563154Z ##[endgroup]
+2026-10-26T16:40:10.8514939Z test_bare_account_name (test_redact.RedactionTests.test_bare_account_name) ... ok
+2026-10-26T16:40:10.8515803Z test_bare_name_must_be_a_whole_word (test_redact.RedactionTests.test_bare_name_must_be_a_whole_word) ... ok
+2026-10-26T16:40:10.8516370Z test_escaped_backslashes_from_json_output (test_redact.RedactionTests.test_escaped_backslashes_from_json_output) ... ok
+2026-10-26T16:40:10.8516849Z test_generic_names_do_not_damage_paths (test_redact.RedactionTests.test_generic_names_do_not_damage_paths)
+2026-10-26T16:40:10.8517199Z An account called `user` must not turn `C:\Users` into `C:\<user>s`. ... ok
+2026-10-26T16:40:10.8517532Z test_ordinary_log_text_is_untouched (test_redact.RedactionTests.test_ordinary_log_text_is_untouched) ... ok
+2026-10-26T16:40:10.8518485Z test_posix_home_directory (test_redact.RedactionTests.test_posix_home_directory) ... ok
+2026-10-26T16:40:10.8518828Z test_redaction_is_idempotent (test_redact.RedactionTests.test_redaction_is_idempotent) ... ok
+2026-10-26T16:40:10.8519170Z test_windows_home_directory (test_redact.RedactionTests.test_windows_home_directory) ... ok
+2026-10-26T16:40:10.8519556Z test_windows_path_with_forward_slashes (test_redact.RedactionTests.test_windows_path_with_forward_slashes) ... ok
+2026-10-26T16:40:10.8519768Z 
+2026-10-26T16:40:10.8519881Z ----------------------------------------------------------------------
+2026-10-26T16:40:10.8520069Z Ran 9 tests in 0.000s
+2026-10-26T16:40:10.8520133Z 
+2026-10-26T16:40:10.8520186Z OK
+2026-10-26T16:40:10.9216391Z ##[group]Run & $env:PYTHON tools/perf/diagnose.py
+2026-10-26T16:40:10.9216605Z & $env:PYTHON tools/perf/diagnose.py
+2026-10-26T16:40:10.9258168Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-10-26T16:40:10.9258347Z env:
+2026-10-26T16:40:10.9258496Z   PYTHON: C:\Users\<user>\AppData\Local\Programs\Python\Python313\python.exe
+2026-10-26T16:40:10.9258672Z ##[endgroup]
+2026-10-26T16:40:11.3144173Z machine: {'platform': 'Windows-10-10.0.19045-SP0', 'python': '3.13.14', 'sqlite': '3.50.4', 'cores': 28}
+2026-10-26T16:40:11.3144654Z profiles found: 3
+2026-10-26T16:40:11.3144766Z 
+2026-10-26T16:40:11.3144901Z == edge_profile_0 (chromium)
+2026-10-26T16:40:11.3145168Z    database: 0.4 MB, 6 rows
+2026-10-26T16:40:11.3145503Z    recency walk used: True
+2026-10-26T16:40:11.3145935Z    indexes on urls: urls_url_index
+2026-10-26T16:40:11.3146219Z    indexes on visits: visits_from_index, visits_originator_id_index, visits_time_index, visits_url_index
+2026-10-26T16:40:11.3146531Z    copy: 0.81 ms cold, 0.1 ms cached
+2026-10-26T16:40:11.3146694Z    query empty         0.23 ms  rows=6
+2026-10-26T16:40:11.3146915Z    query frequent      0.19 ms  rows=2  (term matches 2 of the sampled titles)
+2026-10-26T16:40:11.3147126Z    query absent        0.16 ms  rows=0
+2026-10-26T16:40:11.3147210Z 
+2026-10-26T16:40:11.3147281Z == brave_profile_0 (chromium)
+2026-10-26T16:40:11.3147425Z    database: 25.5 MB, 15,728 rows
+2026-10-26T16:40:11.3147562Z    recency walk used: True
+2026-10-26T16:40:11.3147705Z    indexes on urls: urls_url_index
+2026-10-26T16:40:11.3147963Z    indexes on visits: visits_from_index, visits_originator_id_index, visits_time_index, visits_url_index
+2026-10-26T16:40:11.3148209Z    copy: 7.45 ms cold, 0.1 ms cached
+2026-10-26T16:40:11.3148360Z    query empty         1.82 ms  rows=500
+2026-10-26T16:40:11.3148571Z    query frequent      8.16 ms  rows=500  (term matches 342 of the sampled titles)
+2026-10-26T16:40:11.3148776Z    query absent        5.10 ms  rows=0
+2026-10-26T16:40:11.3148858Z 
+2026-10-26T16:40:11.3148923Z == brave_profile_1 (chromium)
+2026-10-26T16:40:11.3149059Z    database: 0.3 MB, 56 rows
+2026-10-26T16:40:11.3149192Z    recency walk used: True
+2026-10-26T16:40:11.3149325Z    indexes on urls: urls_url_index
+2026-10-26T16:40:11.3149582Z    indexes on visits: visits_from_index, visits_originator_id_index, visits_time_index, visits_url_index
+2026-10-26T16:40:11.3149830Z    copy: 0.59 ms cold, 0.1 ms cached
+2026-10-26T16:40:11.3149978Z    query empty         0.35 ms  rows=56
+2026-10-26T16:40:11.3150187Z    query frequent      0.19 ms  rows=13  (term matches 21 of the sampled titles)
+2026-10-26T16:40:11.3150385Z    query absent        0.17 ms  rows=0
+2026-10-26T16:40:11.3150464Z 
+2026-10-26T16:40:11.3150640Z aggregate: {'profiles': 3, 'total_empty_ms': 2.4, 'total_absent_ms': 5.43, 'largest_database_mb': 25.5}
+2026-10-26T16:40:11.3857933Z ##[group]Run # The instrument the owner will run against the real launcher: proves
+2026-10-26T16:40:11.3858322Z # The instrument the owner will run against the real launcher: proves
+2026-10-26T16:40:11.3858573Z # it works here, including the pre-Python part Windows can report.
+2026-10-26T16:40:11.3858942Z & $env:PYTHON tools/perf/trace_session.py --max-results 25
+2026-10-26T16:40:11.3861357Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-10-26T16:40:11.3861521Z env:
+2026-10-26T16:40:11.3861676Z   PYTHON: C:\Users\<user>\AppData\Local\Programs\Python\Python313\python.exe
+2026-10-26T16:40:11.3861850Z ##[endgroup]
+2026-10-26T16:40:13.1694288Z trace: C:\Users\<user>\AppData\Local\Temp\bh-trace-session-wr3ol8ga\UserData\FlowLauncher\Settings\Plugins\Browser History V2\requests.jsonl
+2026-10-26T16:40:13.1694960Z requests: 3  (query 2, context_menu 1)
+2026-10-26T16:40:13.1695373Z flow launcher version: bh-trace-session-wr3ol8ga
+2026-10-26T16:40:13.1695567Z 
+2026-10-26T16:40:13.1695750Z phase                                  query      menu
+2026-10-26T16:40:13.1696241Z --------------------------------------------------------
+2026-10-26T16:40:13.1696599Z OS process created -> Python starts         -         -
+2026-10-26T16:40:13.1696826Z run.py start -> imports done            41.1      39.9
+2026-10-26T16:40:13.1697023Z imports -> plugin constructed            0.7       0.4
+2026-10-26T16:40:13.1697209Z constructed -> RPC begins                0.0       0.0
+2026-10-26T16:40:13.1697406Z RPC -> discovery done                   29.0       0.0
+2026-10-26T16:40:13.1697588Z discovery -> results built               7.4       0.1
+2026-10-26T16:40:13.1697772Z whole process                           78.2      40.3
+2026-10-26T16:40:13.1697929Z (medians, milliseconds)
+2026-10-26T16:40:13.1697997Z 
+2026-10-26T16:40:13.1698079Z requests closer together than 400 ms: 1
+2026-10-26T16:40:13.1698314Z   t=1793032812.82  query + query + context_menu  (within 246.0 ms)
+2026-10-26T16:40:13.1698444Z 
+2026-10-26T16:40:13.1698541Z gap between requests: median 123 ms, min 118, max 128
+2026-10-26T16:40:13.1698787Z gap between queries: median 128 ms (typing cadence + any debounce Flow applies)
+2026-10-26T16:40:13.1698938Z 
+2026-10-26T16:40:13.1699003Z Reading this:
+2026-10-26T16:40:13.1699188Z   * A burst of two 'query' entries is Flow re-running the plugin for one
+2026-10-26T16:40:13.1699440Z     keystroke; a burst of 'query' then 'context_menu' means opening the
+2026-10-26T16:40:13.1699691Z     menu also refreshed the list, and the user waits for both.
+2026-10-26T16:40:13.1700165Z   * 'OS process created -> Python starts' is the interpreter boot plus the
+2026-10-26T16:40:13.1700428Z     antivirus scan of the executable. It is not Python code and it is paid
+2026-10-26T16:40:13.1700682Z     identically by a query and by the menu, which is why both feel alike.
+2026-10-26T16:40:13.1700818Z 
+2026-10-26T16:40:13.2416025Z ##[group]Run # 25 results: the owner's UI depth, where rendering is not the story.
+2026-10-26T16:40:13.2416337Z # 25 results: the owner's UI depth, where rendering is not the story.
+2026-10-26T16:40:13.2416568Z & $env:PYTHON tools/perf/measure_keystroke.py --max-results 25
+2026-10-26T16:40:13.2416809Z & $env:PYTHON tools/perf/measure_keystroke.py --max-results 25 --favicons
+2026-10-26T16:40:13.2418953Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-10-26T16:40:13.2419116Z env:
+2026-10-26T16:40:13.2419262Z   PYTHON: C:\Users\<user>\AppData\Local\Programs\Python\Python313\python.exe
+2026-10-26T16:40:13.2419439Z ##[endgroup]
+2026-10-26T16:40:18.6904781Z machine: {'platform': 'Windows-10-10.0.19045-SP0', 'python': '3.13.14', 'cores': 28}
+2026-10-26T16:40:18.6905075Z plugin: UserData\FlowLauncher\Plugins\browser-history-v2
+2026-10-26T16:40:18.6905250Z max_ui_results: 25
+2026-10-26T16:40:18.6905365Z favicons: off
+2026-10-26T16:40:18.6905488Z 
+2026-10-26T16:40:18.6905575Z step                                median
+2026-10-26T16:40:18.6905734Z ------------------------------------------
+2026-10-26T16:40:18.6905895Z interpreter                         16.7 ms
+2026-10-26T16:40:18.6906057Z interpreter+flox                    57.9 ms
+2026-10-26T16:40:18.6906227Z interpreter+flox+plugin             75.2 ms
+2026-10-26T16:40:18.6906471Z 
+2026-10-26T16:40:18.6906571Z keystroke                           median   results
+2026-10-26T16:40:18.6906755Z ----------------------------------------------------
+2026-10-26T16:40:18.6906929Z idle                               108.7 ms        25
+2026-10-26T16:40:18.6907098Z search                             112.5 ms        25
+2026-10-26T16:40:18.6907266Z absent                             112.7 ms         0
+2026-10-26T16:40:18.6907429Z menu                                77.3 ms         2
+2026-10-26T16:40:18.6907518Z 
+2026-10-26T16:40:18.6907626Z   idle        no search term: the listing Flow shows on arrival
+2026-10-26T16:40:18.6907829Z   search      a word that occurs often in this history
+2026-10-26T16:40:18.6908000Z   absent      still typing: matches nothing
+2026-10-26T16:40:18.6908200Z   menu        the context menu on one result: two entries, no history
+2026-10-26T16:40:18.6908326Z 
+2026-10-26T16:40:18.6908419Z inside one running process (no start-up, no import):
+2026-10-26T16:40:18.6908598Z   BrowserHistory()                   9.981 ms
+2026-10-26T16:40:18.6908765Z   discovery + cache upkeep           6.908 ms
+2026-10-26T16:40:18.6908925Z   one query, no favicons             2.062 ms
+2026-10-26T16:40:18.6909085Z   one query, with favicons           3.348 ms
+2026-10-26T16:40:18.6909242Z   the context menu                   0.004 ms
+2026-10-26T16:40:18.6909328Z 
+2026-10-26T16:40:18.6909513Z plugin work only (keystroke minus imports): {'idle': 33.5, 'search': 37.3, 'absent': 37.5, 'menu': 2.1}
+2026-10-26T16:40:24.0469446Z machine: {'platform': 'Windows-10-10.0.19045-SP0', 'python': '3.13.14', 'cores': 28}
+2026-10-26T16:40:24.0469990Z plugin: UserData\FlowLauncher\Plugins\browser-history-v2
+2026-10-26T16:40:24.0470322Z max_ui_results: 25
+2026-10-26T16:40:24.0470530Z favicons: on
+2026-10-26T16:40:24.0470624Z 
+2026-10-26T16:40:24.0470769Z step                                median
+2026-10-26T16:40:24.0471058Z ------------------------------------------
+2026-10-26T16:40:24.0471368Z interpreter                         17.5 ms
+2026-10-26T16:40:24.0471672Z interpreter+flox                    57.2 ms
+2026-10-26T16:40:24.0472211Z interpreter+flox+plugin             75.2 ms
+2026-10-26T16:40:24.0472323Z 
+2026-10-26T16:40:24.0472424Z keystroke                           median   results
+2026-10-26T16:40:24.0472612Z ----------------------------------------------------
+2026-10-26T16:40:24.0472798Z idle                               113.2 ms        25
+2026-10-26T16:40:24.0472974Z search                             115.1 ms        25
+2026-10-26T16:40:24.0473938Z absent                             113.9 ms         0
+2026-10-26T16:40:24.0474129Z menu                                77.4 ms         2
+2026-10-26T16:40:24.0474222Z 
+2026-10-26T16:40:24.0474333Z   idle        no search term: the listing Flow shows on arrival
+2026-10-26T16:40:24.0474549Z   search      a word that occurs often in this history
+2026-10-26T16:40:24.0474729Z   absent      still typing: matches nothing
+2026-10-26T16:40:24.0474942Z   menu        the context menu on one result: two entries, no history
+2026-10-26T16:40:24.0475065Z 
+2026-10-26T16:40:24.0475162Z inside one running process (no start-up, no import):
+2026-10-26T16:40:24.0475343Z   BrowserHistory()                  11.083 ms
+2026-10-26T16:40:24.0475512Z   discovery + cache upkeep           6.890 ms
+2026-10-26T16:40:24.0475672Z   one query, no favicons             1.968 ms
+2026-10-26T16:40:24.0475831Z   one query, with favicons           3.275 ms
+2026-10-26T16:40:24.0475985Z   the context menu                   0.004 ms
+2026-10-26T16:40:24.0476071Z 
+2026-10-26T16:40:24.0476255Z plugin work only (keystroke minus imports): {'idle': 38.0, 'search': 39.9, 'absent': 38.7, 'menu': 2.2}
+2026-10-26T16:40:24.1207911Z ##[group]Run & $env:PYTHON tools/perf/bench_queries.py --profiles 2 --firefox 2 --urls 100000 --repeats 5
+2026-10-26T16:40:24.1208289Z & $env:PYTHON tools/perf/bench_queries.py --profiles 2 --firefox 2 --urls 100000 --repeats 5
+2026-10-26T16:40:24.1210639Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-10-26T16:40:24.1210801Z env:
+2026-10-26T16:40:24.1210948Z   PYTHON: C:\Users\<user>\AppData\Local\Programs\Python\Python313\python.exe
+2026-10-26T16:40:24.1211123Z ##[endgroup]
+2026-10-26T16:40:29.5695030Z hardware: 28 cores, win32, python 3.13.14
+2026-10-26T16:40:29.5695304Z fixture: 2 Chromium + 2 Firefox profiles x 100,000 URLs each (skewed history)
+2026-10-26T16:40:29.5695537Z published code: b4f3ce2 (origin/main)
+2026-10-26T16:40:29.5695630Z 
+2026-10-26T16:40:29.5695752Z scenario    query              published   working tree   speedup
+2026-10-26T16:40:29.5695978Z ------------------------------------------------------------------
+2026-10-26T16:40:29.5696233Z empty       (empty)                75 ms          20 ms      3.7x
+2026-10-26T16:40:29.5696440Z common      youtube               132 ms          25 ms      5.2x
+2026-10-26T16:40:29.5696649Z medium      kernel                127 ms          25 ms      5.1x
+2026-10-26T16:40:29.5696887Z multi-word  python sqlite         162 ms          34 ms      4.8x
+2026-10-26T16:40:29.5697099Z absent      zzqq                  116 ms         113 ms      1.0x
+2026-10-26T16:40:29.5697204Z 
+2026-10-26T16:40:29.5697308Z   empty       the plugin's idle listing of recent history
+2026-10-26T16:40:29.5697497Z   common      a word that matches many rows
+2026-10-26T16:40:29.5697669Z   medium      a word that matches a few rows
+2026-10-26T16:40:29.5697839Z   multi-word  two words, both required
+2026-10-26T16:40:29.5698015Z   absent      still typing: matches nothing at all
+2026-10-26T16:40:29.6417887Z Post job cleanup.
+2026-10-26T16:40:29.7264430Z [command]"C:\Program Files\Git\cmd\git.exe" version
+2026-10-26T16:40:29.7429697Z git version 2.53.0.windows.1
+2026-10-26T16:40:29.7463188Z Copying 'C:\Users\<user>\.gitconfig' to 'C:\actions-runners\JdotCarver-browser-history-v2-session\_work\_temp\79f3a4ca-a6c4-4e8e-8046-d7ad77b213b8\.gitconfig'
+2026-10-26T16:40:29.7474775Z Temporarily overriding HOME='C:\actions-runners\JdotCarver-browser-history-v2-session\_work\_temp\79f3a4ca-a6c4-4e8e-8046-d7ad77b213b8' before making global git config changes
+2026-10-26T16:40:29.7475281Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-26T16:40:29.7482315Z [command]"C:\Program Files\Git\cmd\git.exe" config --global --add safe.directory C:\actions-runners\JdotCarver-browser-history-v2-session\_work\browser-history-v2\browser-history-v2
+2026-10-26T16:40:29.7681856Z [command]"C:\Program Files\Git\cmd\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-10-26T16:40:29.7875795Z [command]"C:\Program Files\Git\cmd\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-10-26T16:40:30.1061672Z [command]"C:\Program Files\Git\cmd\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-26T16:40:30.1233928Z http.https://github.com/.extraheader
+2026-10-26T16:40:30.1262973Z [command]"C:\Program Files\Git\cmd\git.exe" config --local --unset-all http.https://github.com/.extraheader
+2026-10-26T16:40:30.1472286Z [command]"C:\Program Files\Git\cmd\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-10-26T16:40:30.4681281Z [command]"C:\Program Files\Git\cmd\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-26T16:40:30.4878173Z [command]"C:\Program Files\Git\cmd\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-10-26T16:40:30.8219530Z Cleaning up orphan processes
+2026-10-26T16:40:30.8319931Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
