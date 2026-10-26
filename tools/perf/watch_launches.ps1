@@ -37,8 +37,10 @@ while ((Get-Date) -lt $deadline) {
         $seen[$process.ProcessId] = $true
 
         # The method is in the JSON payload Flow passes as the only argument.
+        # It arrives quoted and escaped differently depending on how the process
+        # was started, so match the value, not the punctuation around it.
         $method = 'unknown'
-        if ($process.CommandLine -match '"method"\s*:\s*"([^"]+)"') { $method = $Matches[1] }
+        if ($process.CommandLine -match 'method.{1,6}(query|context_menu)') { $method = $Matches[1] }
 
         $parentName = ''
         try {
