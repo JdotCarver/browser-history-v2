@@ -252,6 +252,57 @@ Favicons cost **+1.4 ms** warm on this machine (2.05 -> 3.45), against +0.2 ms
 on the sandbox fixture. Both are real; the difference is the size of the icon
 index and the profile's icon database.
 
+## 4g. The typing debounce is Flow's, and it is measurable (2026-10-26)
+
+Sources read in Flow-Launcher/Flow.Launcher:
+
+* `MainWindow.xaml.cs`: typing calls `Query(_settings.SearchQueryResultsWithDelay)`.
+  Programmatic queries call `Query(false)`, so a delay only ever applies to typing.
+* `Settings.SearchQueryResultsWithDelay` is global and **defaults to false**.
+* When it is on: `plugin.Metadata.SearchDelayTime ?? Settings.SearchDelayTime`
+  (`Settings.SearchDelayTime` defaults to **150 ms**), then `await Task.Delay(...)`.
+
+Consequences:
+
+* `SearchDelayTime: 0` in `plugin.json` is a per-plugin **default** that wins over
+  the global 150 ms, because `??` only falls back on null. Anyone can override it
+  per plugin in Flow's settings UI.
+* An existing install keeps its saved `SearchDelayTime` (often null), so declaring
+  the value in `plugin.json` affects new installs and the UI's "default"; for an
+  existing install the user sets it in Flow's UI.
+* **A plugin setting cannot do this.** The delay happens before the process is
+  spawned, so by the time `main.py` runs the wait is already spent. Do not offer
+  an "instant search" checkbox that pretends otherwise.
+
+## 4h. Where a request's milliseconds actually are (owner machine, run 40361518976)
+
+Traced through the real entry point on the portable tree, 25 results, tracing on.
+Medians in ms:
+
+| phase | query | menu |
+|---|---|---|
+| OS process created -> Python starts | 34.1 | 32.7 |
+| run.py start -> imports done | 40.5 | 40.0 |
+| imports -> plugin constructed | 0.7 | 0.4 |
+| constructed -> RPC begins (flox runs it at shutdown) | 0.0 | 0.0 |
+| RPC -> discovery done | 28.1 | 0.0 |
+| discovery -> results built | 7.4 | 0.1 |
+| **whole process** | **76.7** | **40.5** |
+
+The menu does **0.1 ms of work** and still costs 40.5 ms, because 73 ms of a
+query and 40 ms of a menu are the same fixed start-up. A third of it is spent
+before Python exists (`GetProcessTimes` -> first line of run.py): process
+creation, the antivirus scan of the executable, and interpreter boot.
+
+This is the floor for a JSON-RPC plugin: Flow spawns a process per request, so
+nothing inside the plugin can go below it. Only two things can move it -- fewer
+bytes to import, or Defender exclusions for the interpreter and plugin folder.
+
+To see this on the real launcher: turn on "Trace Requests", use Flow for a
+minute, then `python tools/perf/read_trace.py "<...>/Settings/Plugins/Browser History V2/requests.jsonl"`.
+`tools/perf/watch_launches.ps1` records the same launches from outside, which is
+how to tell one press from two.
+
 ## 5. Measurement discipline
 
 Tests must pass on Windows as well as here. One trap already paid for: a
