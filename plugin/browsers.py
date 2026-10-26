@@ -1,3 +1,6 @@
+# plugin/browsers.py
+"""Finding a browser's history database, and reading rows out of it."""
+
 from __future__ import annotations
 
 import os
@@ -10,9 +13,14 @@ from pathlib import Path
 from datetime import datetime
 from typing import List, Optional
 
-# Environment variables
-LOCAL_DATA = os.getenv("LOCALAPPDATA")
-ROAMING = os.getenv("APPDATA")
+from history_query import FIREFOX_ENGINE, CHROMIUM_ENGINE, read_history
+
+# Environment variables. Empty on a non-Windows machine, which simply makes
+# every profile path below a relative path that does not exist: the plugin then
+# reports "no browsers found" instead of failing to import, and the test suite
+# can run anywhere.
+LOCAL_DATA = os.getenv("LOCALAPPDATA", "")
+ROAMING = os.getenv("APPDATA", "")
 
 # Chromium profile base folders (User Data only, profile selected later)
 CHROMIUM_PROFILE_BASES = {
@@ -48,12 +56,19 @@ FIREFOX_BASES = {
     "waterfox": Path(ROAMING, "Waterfox", "Profiles"),
 }
 
-CHROMIUM_QUERY = (
-    "SELECT url, title, last_visit_time FROM urls ORDER BY last_visit_time DESC"
-)
-FIREFOX_QUERY = "SELECT url, title, visit_date FROM moz_places INNER JOIN moz_historyvisits ON moz_historyvisits.place_id = moz_places.id ORDER BY visit_date DESC"
-
 CHROMIUM_EPOCH_OFFSET = 11644473600
+
+# Resolving the computer name is a system call (a registry read on Windows) and
+# the cache file name only needs it once per process.
+_computer_name: Optional[str] = None
+
+
+def computer_name() -> str:
+    """This machine's name, for namespacing cache files to the current PC."""
+    global _computer_name
+    if _computer_name is None:
+        _computer_name = platform.node()
+    return _computer_name
 
 
 def _get_chromium_profiles(base: Path, db_file: str) -> List[Path]:
@@ -67,6 +82,7 @@ def _get_chromium_profiles(base: Path, db_file: str) -> List[Path]:
         and (p.name == "Default" or p.name.startswith("Profile "))
     ]
 
+
 def _get_firefox_profiles(base: Path, db_file: str) -> List[Path]:
     if not base.exists():
         return []
@@ -79,18 +95,18 @@ class Browser:
     def __init__(
         self,
         name: str,
-        query: str,
         cache_dir: Path,
         timestamp_type: str = "chromium",
         custom_path: Optional[Path] = None,
-        dynamic_profile: bool = False,
         db_file: str = "History",
         profile_last_updated: bool = False,
     ) -> None:
         self.name = name
-        self.query = query
         self.cache_dir = cache_dir
         self.timestamp_type = timestamp_type
+        self.engine = (
+            CHROMIUM_ENGINE if timestamp_type == "chromium" else FIREFOX_ENGINE
+        )
         self.db_file = db_file
 
         # Resolve database path
@@ -148,7 +164,7 @@ class Browser:
     def _copy_database(self) -> str:
         """Copy the locked original DB to a uniquely named cache file for safe reading."""
         safe_name = self.name.replace(" ", "_")
-        safe_pc = platform.node().replace(" ", "_")
+        safe_pc = computer_name().replace(" ", "_")
 
         # Hash the absolute path to prevent cache collisions between different custom profiles
         path_hash = hashlib.md5(str(self.database_path).encode("utf-8")).hexdigest()[:8]
@@ -200,33 +216,13 @@ class Browser:
             )
 
         try:
-            cursor = connection.cursor()
-            base, order = self.query.split(" ORDER BY ")
-            conditions = []
-            params = []
-
-            if search_term:
-                terms = search_term.split()
-                # Require EVERY word to be present in either the title or the URL
-                for term in terms:
-                    conditions.append("(title LIKE ? OR url LIKE ?)")
-                    params.extend([f"%{term}%", f"%{term}%"])
-            
-            if blocked_domains:
-                for domain in blocked_domains:
-                    conditions.append("url NOT LIKE ?")
-                    params.append(f"%{domain}%")
-
-            if conditions:
-                where_clause = " AND ".join(conditions)
-                sql = f"{base} WHERE {where_clause} ORDER BY {order} LIMIT ?"
-            else:
-                sql = f"{base} ORDER BY {order} LIMIT ?"
-
-            params.append(limit)
-            cursor.execute(sql, tuple(params))
-
-            rows = cursor.fetchall()
+            rows = read_history(
+                connection,
+                self.engine,
+                terms=search_term.split(),
+                blocked_domains=list(blocked_domains or ()),
+                limit=limit,
+            )
         finally:
             connection.close()
         return [HistoryItem(self, *row) for row in rows]
@@ -260,12 +256,15 @@ class HistoryItem:
         self.url = url
         self.title = title.strip() if title else url
         self.last_visit_time = last_visit_time
+        # Every consumer sorts or compares by this value; computing it once keeps
+        # the sort key honest and cheap.
+        self._normalized_time = browser.normalize_timestamp(last_visit_time)
 
     def timestamp(self) -> datetime:
         return self.browser.convert_timestamp(self.last_visit_time)
 
     def normalized_time(self) -> float:
-        return self.browser.normalize_timestamp(self.last_visit_time)
+        return self._normalized_time
 
 
 def get(
@@ -293,7 +292,6 @@ def get(
         if (path / "History").exists():
             return Browser(
                 "custom profile",
-                CHROMIUM_QUERY,
                 cache_dir,
                 "chromium",
                 custom_path=path,
@@ -302,7 +300,6 @@ def get(
         elif (path / "places.sqlite").exists():
             return Browser(
                 "custom profile",
-                FIREFOX_QUERY,
                 cache_dir,
                 "unix_us",
                 custom_path=path,
@@ -317,7 +314,6 @@ def get(
         if browser_name in CHROMIUM_PROFILE_BASES or browser_name in FIXED_PATHS:
             return Browser(
                 browser_name,
-                CHROMIUM_QUERY,
                 cache_dir,
                 "chromium",
                 profile_last_updated=profile_last_updated,
@@ -325,10 +321,8 @@ def get(
         if browser_name in FIREFOX_BASES:
             return Browser(
                 browser_name,
-                FIREFOX_QUERY,
                 cache_dir,
                 "unix_us",
-                dynamic_profile=True,
                 db_file="places.sqlite",
                 profile_last_updated=profile_last_updated,
             )
@@ -360,7 +354,6 @@ def get_all_profiles(
             browsers_list.append(
                 Browser(
                     "custom_profile_0",
-                    CHROMIUM_QUERY,
                     cache_dir,
                     "chromium",
                     custom_path=path,
@@ -371,7 +364,6 @@ def get_all_profiles(
             browsers_list.append(
                 Browser(
                     "custom_profile_0",
-                    FIREFOX_QUERY,
                     cache_dir,
                     "unix_us",
                     custom_path=path,
@@ -388,12 +380,10 @@ def get_all_profiles(
     if browser_name in CHROMIUM_PROFILE_BASES:
         base = CHROMIUM_PROFILE_BASES[browser_name]
         db_file = "History"
-        query = CHROMIUM_QUERY
         ts_type = "chromium"
     elif browser_name in FIREFOX_BASES:
         base = FIREFOX_BASES[browser_name]
         db_file = "places.sqlite"
-        query = FIREFOX_QUERY
         ts_type = "unix_us"
     else:
         single_browser = get(browser_name, cache_dir)
@@ -413,7 +403,6 @@ def get_all_profiles(
             browsers_list.append(
                 Browser(
                     unique_name,
-                    query,
                     cache_dir,
                     ts_type,
                     custom_path=path.parent,
