@@ -227,6 +227,12 @@ slower than the listing it opens onto.
 
 ## 5. Measurement discipline
 
+Tests must pass on Windows as well as here. One trap already paid for: a
+`tempfile.TemporaryDirectory` cannot be removed while the process' working
+directory is inside it (`WinError 32`), and `addCleanup` runs last-registered
+first -- so a chdir-based test must restore the directory *before* the cleanup
+runs. Better: do not chdir at all. Redirect `plugin.cache_dir` instead.
+
 Findings only count if they reproduce on the user's machine. Sandbox numbers are synthetic (2
 cores, Linux, fabricated history); use the local Windows runner for a verdict. See
 `tools/github_actions_runner/AGENTS.md` for dispatch mechanics.

@@ -58,22 +58,30 @@ class LazyDiscoveryTests(unittest.TestCase):
     """Discovery belongs to the query path: the context menu must not pay for it."""
 
     def setUp(self):
+        # No chdir: on Windows a temp directory cannot be removed while it is
+        # the working directory, and construction touches nothing anyway. The
+        # cache is redirected so a query never writes into the repository.
         self._tmp = tempfile.TemporaryDirectory()
-        self._cwd = os.getcwd()
-        os.chdir(self._tmp.name)
-        self.addCleanup(os.chdir, self._cwd)
         self.addCleanup(self._tmp.cleanup)
+        self.cache_dir = Path(self._tmp.name) / "Cache"
+
+    def make_plugin(self):
+        plugin = main.BrowserHistory()
+        plugin.cache_dir = self.cache_dir
+        plugin.favicons.directory = self.cache_dir / "favicons"
+        return plugin
 
     def test_constructing_the_plugin_explores_nothing(self):
         with mock.patch.object(main.browsers, "get", side_effect=AssertionError("discovery")), \
                 mock.patch.object(main.browsers, "get_all_profiles", side_effect=AssertionError("discovery")):
-            plugin = main.BrowserHistory()
+            plugin = self.make_plugin()
 
         self.assertEqual(plugin.browsers, [])
         self.assertFalse(plugin._ready)
+        self.assertFalse(self.cache_dir.exists(), "construction must not touch the disk")
 
     def test_the_context_menu_is_built_without_browsers(self):
-        plugin = main.BrowserHistory()
+        plugin = self.make_plugin()
 
         plugin.context_menu(["A title", "https://example.com/x"])
 
@@ -83,7 +91,7 @@ class LazyDiscoveryTests(unittest.TestCase):
         )
 
     def test_the_first_query_discovers_and_the_second_does_not(self):
-        plugin = main.BrowserHistory()
+        plugin = self.make_plugin()
         calls = []
 
         def counting(*args, **kwargs):
@@ -99,7 +107,7 @@ class LazyDiscoveryTests(unittest.TestCase):
         self.assertEqual(len(calls), after_first, "discovery must not repeat per query")
 
     def test_a_query_with_no_browsers_still_explains_itself(self):
-        plugin = main.BrowserHistory()
+        plugin = self.make_plugin()
 
         with mock.patch.object(main.browsers, "get", return_value=None):
             plugin.query("")
