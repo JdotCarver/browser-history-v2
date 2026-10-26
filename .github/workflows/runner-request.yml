@@ -115,7 +115,9 @@ jobs:
 
       - name: Per-keystroke measurement
         run: |
-          & $env:PYTHON tools/perf/measure_keystroke.py
+          # 25 results: the owner's UI depth, where rendering is not the story.
+          & $env:PYTHON tools/perf/measure_keystroke.py --max-results 25
+          & $env:PYTHON tools/perf/measure_keystroke.py --max-results 25 --favicons
 
       - name: Synthetic A/B benchmark
         run: |
