@@ -66,27 +66,52 @@ jobs:
           # whole history has to be here.
           fetch-depth: 0
 
-      - name: Set up Python
+      # GitHub-hosted runners are bare, so they need a Python installed. The
+      # session runner is a real desktop that already has one -- and
+      # actions/setup-python cannot install there: it asks for registry access it
+      # does not have, then retries for twenty minutes before failing.
+      - name: Install Python (hosted runners only)
+        if: needs.select-runner.outputs.target != 'local-windows'
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
 
-      - name: Runner receipt
-        run: python tools/github_actions_runner/probe.py .github/runner-request.toml
+      - name: Resolve the Python to run with
+        shell: pwsh
+        run: |
+          $resolved = $null
+          foreach ($candidate in @('py', 'python', 'python3')) {
+            $command = Get-Command $candidate -ErrorAction SilentlyContinue
+            if (-not $command) { continue }
+            $executable = & $command.Source -c "import sys; print(sys.executable)" 2>$null
+            if ($LASTEXITCODE -eq 0 -and $executable) {
+              $resolved = "$executable".Trim()
+              break
+            }
+          }
+          if (-not $resolved) { throw "No usable Python found on this runner." }
+          "PYTHON=$resolved" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          & $resolved --version
 
       - name: Environment
         run: |
-          python --version
-          python -c "import sqlite3, platform; print('sqlite', sqlite3.sqlite_version, '|', platform.platform())"
+          & $env:PYTHON -c "import sqlite3, platform, sys; print('python', sys.version.split()[0], '| sqlite', sqlite3.sqlite_version, '|', platform.platform())"
+
+      - name: Runner receipt
+        run: |
+          & $env:PYTHON tools/github_actions_runner/probe.py .github/runner-request.toml
 
       - name: Unit tests
-        run: python -m unittest discover -s tests -p "test_*.py" -v
+        run: |
+          & $env:PYTHON -m unittest discover -s tests -p "test_*.py" -v
 
       - name: Diagnostic on the real browser histories
-        run: python tools/perf/diagnose.py
+        run: |
+          & $env:PYTHON tools/perf/diagnose.py
 
       - name: Synthetic A/B benchmark
-        run: python tools/perf/bench_queries.py --profiles 2 --firefox 2 --urls 100000 --repeats 5
+        run: |
+          & $env:PYTHON tools/perf/bench_queries.py --profiles 2 --firefox 2 --urls 100000 --repeats 5
 
   export-logs:
     name: Export logs
