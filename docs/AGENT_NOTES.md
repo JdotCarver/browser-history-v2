@@ -94,6 +94,39 @@ The benchmark runs each side in its own subprocess (as Flow Launcher does) and
 extracts the published `plugin/browsers.py` from git, so the comparison is
 against the real published code rather than a copy of it.
 
+## 4a. Evidence from the owner's machine (run 40349238896, 2026-10-26)
+
+Windows 10, 28 cores, Python 3.13.14, sqlite 3.50.4. Real profiles found:
+Edge (6 rows), Brave `Profile 0` (15,720 rows / 25.5 MB, the real one), Brave
+`Profile 1` (55 rows). No Firefox installed, so Firefox is shipped for
+correctness and measured only on synthetic data.
+
+| measurement | value |
+|---|---|
+| cold copy of the 25.5 MB database | 7.45 ms |
+| cached copy check | 0.10 ms |
+| every profile, empty query | 11.38 ms |
+| every profile, frequent term (500 rows) | 7.89 ms |
+| every profile, term matching nothing | 5.16 ms |
+
+So all database work for one keystroke is 12-19 ms on this machine. Synthetic
+A/B on the same machine (2 Chromium + 2 Firefox profiles x 100k URLs, medians of
+5): 74 -> 17 ms (4.4x) empty, 132 -> 25 ms (5.2x) common, 163 -> 33 ms (4.9x)
+multi-word, 115 -> 113 ms (1.0x) no-match. All 38 tests pass on Windows 3.13.
+
+**Conclusion: this machine is past the point where query tuning pays.** What is
+left per keystroke is interpreter start-up plus the `flox` import, which has not
+been measured end-to-end yet. That is the next thing to measure, not another
+query rewrite. Note also that `tools/perf/diagnose.py` reports no URLs, titles
+or search terms, but the runner bridge publishes full job logs (including local
+paths) to the `actions-logs` branch, which is world-readable on a public repo.
+
+Remaining measured opportunity, if it is ever wanted: for the *empty* query only,
+Chromium's `visits` walk fills the page immediately (the newest visits are by
+definition all matches), which would take the 11.24 ms empty query on Brave to
+roughly 4 ms. It is switched off today because that same walk loses by up to 5x
+once a search term is involved.
+
 ## 4b. Rules we now hold the code to
 
 - A plan that can be slower than what it replaces is not an optimisation. Every
