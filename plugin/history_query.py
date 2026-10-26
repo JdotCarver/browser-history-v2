@@ -98,6 +98,10 @@ class HistoryEngine:
                     return True
         return False
 
+    def recency_walk_applies(self, terms: Sequence[str]) -> bool:
+        """Whether a time-ordered walk is worth trying for this particular search."""
+        return True
+
     def window_row_limit(self, row_budget: int) -> int:
         """How many rows the recency walk should request for this budget."""
         return row_budget
@@ -150,19 +154,42 @@ class ChromiumHistoryEngine(HistoryEngine):
     a time index, so reading the newest history in order means walking
     ``visits`` and joining ``urls`` for every entry.
 
-    That join is what rules out a recency walk here. Measured on a 100k-URL
-    profile, proving that a term matches nothing costs 66 ms through the
-    ``visits`` index and 13 ms by scanning ``urls``; a term matching well costs
-    15 ms against 20 ms. The walk only wins when the very first index entries
-    match, and loses by up to 5x when they do not. Scanning ``urls`` once costs
-    the same whatever the term matches, so that is the only plan used.
+    That join is what rules a recency walk out for *searches*. Measured on a
+    100k-URL profile, proving that a term matches nothing costs 66 ms through
+    the ``visits`` index and 13 ms by scanning ``urls``; a term matching well
+    costs 15 ms against 20 ms. The walk only wins when the very first index
+    entries match, and loses by up to 5x when they do not.
+
+    It always wins for the unfiltered listing, though, because there is nothing
+    to filter: the newest visits are all matches, so the walk fills the page in
+    a few milliseconds instead of sorting the whole ``urls`` table.
     """
 
     timestamp_type = "chromium"
     url_column = "urls.url"
     title_column = "urls.title"
-    time_index_table = ""
-    time_index_column = ""
+    time_index_table = "visits"
+    time_index_column = "visit_time"
+
+    def recency_walk_applies(self, terms: Sequence[str]) -> bool:
+        return not terms
+
+    def window_row_limit(self, row_budget: int) -> int:
+        # One row per *visit*, so several rows can belong to the same URL.
+        return row_budget * WINDOW_OVERSCAN
+
+    def window_statement(self, window_days, terms, blocked_domains, row_limit, now) -> Statement:
+        conditions, parameters = self._filters(terms, blocked_domains)
+        conditions.insert(0, "visits.visit_time >= ?")
+        parameters.insert(0, self.window_start(window_days, now))
+        parameters.append(row_limit)
+        sql = (
+            "SELECT urls.url, urls.title, visits.visit_time "
+            "FROM visits JOIN urls ON urls.id = visits.url "
+            f"WHERE {' AND '.join(conditions)} "
+            "ORDER BY visits.visit_time DESC LIMIT ?"
+        )
+        return sql, tuple(parameters)
 
     def full_statement(self, terms, blocked_domains, limit) -> Statement:
         conditions, parameters = self._filters(terms, blocked_domains)
@@ -248,7 +275,7 @@ def build_statements(
     now = time.time() if now is None else now
     statements: List[Statement] = []
 
-    if engine.has_time_index(connection):
+    if engine.has_time_index(connection) and engine.recency_walk_applies(terms):
         for window_days in windows:
             statements.append(
                 engine.window_statement(

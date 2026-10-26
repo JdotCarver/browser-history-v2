@@ -188,27 +188,49 @@ class FirefoxQueryTests(HistoryQueryContract, unittest.TestCase):
 
 
 class ChromiumPlanTests(unittest.TestCase):
-    def test_chromium_never_walks_a_recency_index(self):
-        """Chromium's time index lives in `visits`, so a walk has to join `urls`.
+    """Chromium walks its time index only when there is nothing to filter."""
 
-        Measured on a 100k-URL profile: proving a term matches nothing costs
-        66 ms through that index and 13 ms by scanning `urls`. The walk is
-        therefore switched off for this engine even when the index is present.
-        Re-enabling it needs a benchmark that shows the opposite.
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.db_path = history_fixtures.build_chromium_history(
+            Path(self._tmp.name) / "History", url_count=300, with_time_index=True
+        )
+        self.connection = connect(self.db_path)
+        self.addCleanup(self.connection.close)
+
+    def statements_for(self, terms):
+        return history_query.build_statements(
+            history_query.CHROMIUM_ENGINE, self.connection, terms, [], 10
+        )
+
+    def test_the_unfiltered_listing_tries_recent_visits_first(self):
+        """The newest visits are all matches, so the walk fills the page at once."""
+        statements = self.statements_for([])
+        self.assertGreater(len(statements), 1)
+        self.assertIn("visits.visit_time >=", statements[0][0])
+        self.assertIn("ORDER BY last_visit_time", statements[-1][0])
+
+    def test_a_search_never_walks_the_visit_index(self):
+        """One index entry costs a join into `urls`; on a 100k-URL profile that is
+        66 ms to prove no match against 13 ms for one scan. Never walk for a search.
+        Re-enabling this needs a benchmark that shows the opposite.
         """
-        with tempfile.TemporaryDirectory() as directory:
-            db_path = history_fixtures.build_chromium_history(
-                Path(directory) / "History", url_count=50, with_time_index=True
+        statements = self.statements_for(["youtube"])
+        self.assertEqual(len(statements), 1)
+        self.assertIn("FROM urls", statements[0][0])
+
+    def test_an_unfiltered_listing_still_agrees_with_the_exhaustive_search(self):
+        connection = connect(self.db_path)
+        try:
+            rows = history_query.read_history(
+                connection, history_query.CHROMIUM_ENGINE, [], [], 25
             )
-            connection = connect(db_path)
-            try:
-                self.assertFalse(history_query.CHROMIUM_ENGINE.has_time_index(connection))
-                statements = history_query.build_statements(
-                    history_query.CHROMIUM_ENGINE, connection, [], [], 10
-                )
-            finally:
-                connection.close()
-        self.assertEqual(len(statements), 1, "Chromium should read with one statement")
+        finally:
+            connection.close()
+        self.assertEqual(
+            rows, history_fixtures.reference_rows(self.db_path, "chromium", limit=25)
+        )
 
 
 class TimestampEncodingTests(unittest.TestCase):
