@@ -12,6 +12,8 @@ from tracing import RequestTrace, process_start_mono as process_entry_mono
 from results import newest_unique, read_profiles
 import os
 import platform
+import sys
+import traceback
 import shutil
 import time
 from pathlib import Path
@@ -395,7 +397,29 @@ class BrowserHistory(Flox):
         self.show_msg("Copied!", f"{data}")
 
     def run(self):
-        pass
+        """Answer the request now, then stop -- do not wait for shutdown.
+
+        The launcher library builds its answer from `__del__`, which Windows runs
+        during interpreter shutdown: after our work is done, the process still
+        pays to tear the interpreter down (measured: 27 ms of a 51 ms request on
+        the sandbox, and the same again for every context menu, which Flow asks
+        for twice). Answering here and exiting at once returns the same JSON
+        without waiting for cleanup nothing depends on -- every database
+        connection and file is already closed by this point.
+        """
+        status = 0
+        try:
+            self.call()
+        except Exception:
+            # A failure here must still leave a trace and a non-zero status.
+            traceback.print_exc()
+            status = 1
+        finally:
+            try:
+                sys.stdout.flush()
+                sys.stderr.flush()
+            finally:
+                os._exit(status)
 
 
 if __name__ == "__main__":

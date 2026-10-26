@@ -38,21 +38,35 @@ class Loading(TempTrace):
         self.assertEqual(len(read_trace.load(self.path)), 1)
 
 
-class Bursts(TempTrace):
-    def test_two_processes_for_one_press_is_a_burst(self):
-        self.write([record(100.0), record(100.3)])
-        groups = read_trace.bursts(read_trace.load(self.path))
+class Duplicates(TempTrace):
+    """One action, two processes -- invisible in any per-request timing."""
+
+    def test_two_menus_inside_a_quarter_second_are_one_press(self):
+        # The owner's machine: every press produced exactly this pair.
+        self.write([record(100.0, "context_menu"), record(100.121, "context_menu")])
+        groups = read_trace.duplicates(read_trace.load(self.path))
         self.assertEqual(len(groups), 1)
-        self.assertEqual(groups[0]["methods"], ["query", "query"])
+        self.assertEqual(groups[0]["method"], "context_menu")
+        self.assertEqual(groups[0]["count"], 2)
+        self.assertAlmostEqual(groups[0]["spread_ms"], 121.0, places=1)
 
-    def test_a_menu_after_a_query_is_a_burst(self):
-        self.write([record(100.0, "query"), record(100.25, "context_menu")])
-        groups = read_trace.bursts(read_trace.load(self.path))
-        self.assertEqual(groups[0]["methods"], ["query", "context_menu"])
+    def test_typing_is_not_a_duplicate(self):
+        # 118-300 ms between keystrokes is a person typing.
+        self.write([record(1.0), record(1.23), record(1.46), record(1.75)])
+        self.assertEqual(read_trace.duplicates(read_trace.load(self.path)), [])
 
-    def test_separate_actions_are_not(self):
-        self.write([record(100.0), record(101.0), record(102.0)])
-        self.assertEqual(read_trace.bursts(read_trace.load(self.path)), [])
+    def test_queries_closer_than_a_keystroke_are_a_duplicate(self):
+        self.write([record(1.0), record(1.05)])
+        groups = read_trace.duplicates(read_trace.load(self.path))
+        self.assertEqual([group["method"] for group in groups], ["query"])
+
+    def test_a_menu_after_a_query_is_not_one_action(self):
+        self.write([record(1.0, "query"), record(1.02, "context_menu")])
+        self.assertEqual(read_trace.duplicates(read_trace.load(self.path)), [])
+
+    def test_separate_presses_are_not_paired(self):
+        self.write([record(1.0, "context_menu"), record(1.4, "context_menu")])
+        self.assertEqual(read_trace.duplicates(read_trace.load(self.path)), [])
 
 
 class Gaps(TempTrace):

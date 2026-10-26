@@ -27,9 +27,18 @@ import sys
 from pathlib import Path
 from typing import Dict, List, Optional
 
-# Two launches closer together than this are treated as one interaction that
-# produced two processes -- the signature of a double invocation.
-BURST_GAP_MS = 400
+# How close two processes of the same kind must be to be one action repeated.
+# The thresholds differ because the actions do:
+#
+#   context_menu   a menu takes ~45 ms to build and a person cannot open two of
+#                  them inside a quarter of a second. Anything closer is one
+#                  press that cost two processes -- measured at 101-139 ms on
+#                  the owner's machine, in every one of nine presses.
+#   query          typing cadence. 118-300 ms between keystrokes is a person
+#                  typing at 3-8 characters a second, and is not a duplicate.
+#                  Faster than that is Flow re-running the same query.
+MENU_PAIR_MS = 250
+QUERY_DOUBLE_MS = 90
 
 PHASE_ORDER = [
     ("creation_to_python_start", "OS process created -> Python starts"),
@@ -76,22 +85,33 @@ def phase_table(records: List[dict]) -> None:
     print("(medians, milliseconds)")
 
 
-def bursts(records: List[dict]) -> List[dict]:
-    """Groups of requests that arrived too close together to be separate actions."""
+def duplicates(records: List[dict]) -> List[dict]:
+    """Groups of same-method processes that are one action, not several.
+
+    A press of the context menu that costs two processes is invisible in any
+    per-request timing: each looks healthy on its own. It only shows up here.
+    """
     found: List[dict] = []
     index = 0
     while index < len(records):
+        method = records[index]["method"]
+        limit = MENU_PAIR_MS if method == "context_menu" else QUERY_DOUBLE_MS
         start = float(records[index]["ts"])
         group = [records[index]]
         cursor = index + 1
-        while cursor < len(records) and (float(records[cursor]["ts"]) - start) * 1000 < BURST_GAP_MS:
+        while (
+            cursor < len(records)
+            and records[cursor]["method"] == method
+            and (float(records[cursor]["ts"]) - start) * 1000 < limit
+        ):
             group.append(records[cursor])
             cursor += 1
         if len(group) > 1:
             found.append(
                 {
+                    "method": method,
                     "start": start,
-                    "methods": [record["method"] for record in group],
+                    "count": len(group),
                     "spread_ms": round((float(group[-1]["ts"]) - start) * 1000, 1),
                 }
             )
@@ -131,7 +151,7 @@ def main(argv=None) -> int:
     for record in records:
         counts[record["method"]] = counts.get(record["method"], 0) + 1
 
-    groups = bursts(records)
+    groups = duplicates(records)
     all_gaps = gaps(records)
     query_gaps = gaps(records, "query")
     flows = sorted({record.get("flow", "") for record in records if record.get("flow")})
@@ -160,7 +180,7 @@ def main(argv=None) -> int:
                         }
                         for key, _label in PHASE_ORDER
                     },
-                    "bursts": groups,
+                    "duplicates": groups,
                     "gaps_all": all_gaps,
                     "gaps_query": query_gaps,
                     "flow": flows,
@@ -179,11 +199,20 @@ def main(argv=None) -> int:
     phase_table(records)
 
     print()
-    print(f"requests closer together than {BURST_GAP_MS} ms: {len(groups)}")
-    for group in groups[:10]:
-        print(f"  t={group['start']:.2f}  {' + '.join(group['methods'])}  (within {group['spread_ms']} ms)")
-    if len(groups) > 10:
-        print(f"  ... and {len(groups) - 10} more")
+    menus = [group for group in groups if group["method"] == "context_menu"]
+    queries = [group for group in groups if group["method"] == "query"]
+
+    print(f"context menu asked more than once per press: {len(menus)}")
+    for group in menus:
+        print(f"  t={group['start']:.2f}  {group['count']} processes within {group['spread_ms']} ms")
+    if menus:
+        print("  -> each press costs two plugin processes, so the wait is doubled")
+
+    print(f"queries closer together than {QUERY_DOUBLE_MS} ms: {len(queries)}")
+    for group in queries[:10]:
+        print(f"  t={group['start']:.2f}  {group['count']} processes within {group['spread_ms']} ms")
+    if not queries:
+        print("  -> none: the gaps between queries are typing, not repeats")
 
     if all_gaps:
         print()
@@ -195,9 +224,8 @@ def main(argv=None) -> int:
 
     print()
     print("Reading this:")
-    print("  * A burst of two 'query' entries is Flow re-running the plugin for one")
-    print("    keystroke; a burst of 'query' then 'context_menu' means opening the")
-    print("    menu also refreshed the list, and the user waits for both.")
+    print("  * Two 'context_menu' processes per press cannot be a human; it is one")
+    print("    action that Flow asked for twice, and no per-request timing shows it.")
     print("  * 'OS process created -> Python starts' is the interpreter boot plus the")
     print("    antivirus scan of the executable. It is not Python code and it is paid")
     print("    identically by a query and by the menu, which is why both feel alike.")
