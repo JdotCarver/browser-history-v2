@@ -161,20 +161,24 @@ class Browser:
             else candidates[0]
         )
 
-    def _copy_database(self) -> str:
-        """Copy the locked original DB to a uniquely named cache file for safe reading."""
+    def _cache_copy(self, source: Path, kind: str) -> str:
+        """Copy a browser database to a uniquely named cache file for safe reading.
+
+        The browser holds its own databases open and locked, so every read
+        happens against a copy. The copy is reused until the original is newer.
+        """
         safe_name = self.name.replace(" ", "_")
         safe_pc = computer_name().replace(" ", "_")
 
         # Hash the absolute path to prevent cache collisions between different custom profiles
-        path_hash = hashlib.md5(str(self.database_path).encode("utf-8")).hexdigest()[:8]
-        cache_name = f"bh_{safe_pc}_{safe_name}_{path_hash}_cache.sqlite"
+        path_hash = hashlib.md5(str(source).encode("utf-8")).hexdigest()[:8]
+        cache_name = f"bh_{safe_pc}_{safe_name}_{path_hash}_{kind}.sqlite"
         target = self.cache_dir / cache_name
 
         # Check if we already have a cached copy that is up to date
         try:
             if target.exists():
-                source_mtime = self.database_path.stat().st_mtime
+                source_mtime = source.stat().st_mtime
                 target_mtime = target.stat().st_mtime
                 if source_mtime <= target_mtime:
                     return str(target)
@@ -184,17 +188,33 @@ class Browser:
         last_err = None
         for attempt in range(3):
             try:
-                shutil.copy(self.database_path, target)
+                shutil.copy(source, target)
                 break
             except OSError as e:
                 last_err = e
                 time.sleep(0.05 * (attempt + 1))
         else:
             raise OSError(
-                f"Failed copying history DB for '{self.name}' from '{self.database_path}' to '{target}': {last_err}"
+                f"Failed copying {kind} DB for '{self.name}' from '{source}' to '{target}': {last_err}"
             )
 
         return str(target)
+
+    def _copy_database(self) -> str:
+        return self._cache_copy(self.database_path, "cache")
+
+    def icons_database(self) -> Optional[Path]:
+        """The profile's favicon store, if the browser keeps one."""
+        name = "Favicons" if self.timestamp_type == "chromium" else "favicons.sqlite"
+        candidate = Path(self.database_path).parent / name
+        return candidate if candidate.exists() else None
+
+    def copy_icons_database(self) -> Optional[str]:
+        """A readable copy of the favicon store, or None when there is none."""
+        source = self.icons_database()
+        if source is None:
+            return None
+        return self._cache_copy(source, "icons")
 
     def history(
         self, search_term: str = "", limit: int = 100, blocked_domains: Optional[List[str]] = None

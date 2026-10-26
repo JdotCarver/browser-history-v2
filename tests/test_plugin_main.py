@@ -14,6 +14,7 @@ import flow_stub  # noqa: E402
 
 flow_stub.install()
 
+import sqlite3  # noqa: E402  (imported for the failure test)
 import formatting  # noqa: E402
 import main  # noqa: E402
 
@@ -140,6 +141,71 @@ class QueryRenderingTests(unittest.TestCase):
         self.assertEqual(
             plugin.items[0]["subtitle"], "Jan 01, 2024 - example.com"
         )
+
+    def test_favicons_are_off_unless_asked_for(self):
+        """The default costs nothing: the icon store is never consulted."""
+        plugin = make_plugin()
+        plugin._get_combined_history = lambda query: [
+            FakeItem("Shared", "https://example.com/shared", 300)
+        ]
+
+        class UnusedStore:
+            def resolve(self, items):
+                raise AssertionError("favicons must not be looked up when off")
+
+        plugin.favicons = UnusedStore()
+        plugin.query("term")
+
+        self.assertEqual(plugin.items[0]["title"], "Shared")
+
+    def test_an_icon_replaces_the_glyph(self):
+        plugin = make_plugin()
+        plugin._get_combined_history = lambda query: [
+            FakeItem("Shared", "https://example.com/shared", 300)
+        ]
+
+        class Store:
+            def resolve(self, items):
+                return {items[0].url: "C:/icons/abc.png"}
+
+        plugin.show_favicons = True
+        plugin.favicons = Store()
+        plugin.query("term")
+
+        self.assertEqual(plugin.items[0]["icon"], "C:/icons/abc.png")
+        self.assertIsNone(plugin.items[0]["glyph"])
+
+    def test_a_url_without_an_icon_keeps_the_glyph(self):
+        plugin = make_plugin()
+        plugin._get_combined_history = lambda query: [
+            FakeItem("Shared", "https://example.com/shared", 300)
+        ]
+
+        class Store:
+            def resolve(self, items):
+                return {}
+
+        plugin.show_favicons = True
+        plugin.favicons = Store()
+        plugin.query("term")
+
+        self.assertEqual(plugin.items[0]["glyph"], main.HISTORY_GLYPH)
+
+    def test_a_broken_icon_lookup_never_costs_the_results(self):
+        plugin = make_plugin()
+        plugin._get_combined_history = lambda query: [
+            FakeItem("Shared", "https://example.com/shared", 300)
+        ]
+
+        class Exploding:
+            def resolve(self, items):
+                raise sqlite3.OperationalError("database is locked")
+
+        plugin.show_favicons = True
+        plugin.favicons = Exploding()
+        plugin.query("term")
+
+        self.assertEqual([item["title"] for item in plugin.items], ["Shared"])
 
     def test_skipped_profiles_are_reported_above_the_results(self):
         plugin = make_plugin()

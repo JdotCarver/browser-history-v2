@@ -55,9 +55,13 @@ DEFAULT_SETTINGS = {
 }
 
 
-def settings_for(max_results: int) -> dict:
+def settings_for(max_results: int, favicons: bool = False) -> dict:
     """The settings a keystroke is measured with; rendering cost scales with this."""
-    return dict(DEFAULT_SETTINGS, max_ui_results=str(max_results))
+    return dict(
+        DEFAULT_SETTINGS,
+        max_ui_results=str(max_results),
+        show_favicons=favicons,
+    )
 
 #: Long enough that nothing real matches it.
 ABSENT_TERM = "qzxqzxqzx"
@@ -175,6 +179,11 @@ def main(argv=None) -> int:
         default=500,
         help="the max_ui_results setting to measure with; rendering cost scales with it",
     )
+    parser.add_argument(
+        "--favicons",
+        action="store_true",
+        help="measure with Show Favicons on; the first repeat fills the cache",
+    )
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
 
@@ -186,7 +195,7 @@ def main(argv=None) -> int:
     }, "steps": {}, "keystrokes": {}}
 
     try:
-        settings = settings_for(args.max_results)
+        settings = settings_for(args.max_results, args.favicons)
         plugin_dir, _launcher_root = build_plugin_layout(work_dir, settings)
         lib_dir = install_dependencies(plugin_dir)
 
@@ -252,6 +261,7 @@ def main(argv=None) -> int:
             print(f"machine: {report['machine']}")
             print(f"plugin: {plugin_dir.relative_to(work_dir)}")
             print(f"max_ui_results: {args.max_results}")
+            print(f"favicons: {'on' if args.favicons else 'off'}")
             print()
             print(f"{'step':<32}{'median':>10}")
             print("-" * 42)

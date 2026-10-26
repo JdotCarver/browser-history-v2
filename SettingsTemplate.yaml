@@ -85,6 +85,12 @@ body:
       options:
         - Bracketed
         - Dashed
+  - type: checkbox
+    attributes:
+      name: show_favicons
+      label: Show Favicons
+      defaultValue: False
+      description: Show each site's icon, taken from your browser's own icon cache (no requests are made). The first search reads the icons; later ones reuse the cache.
   - type: textarea
     attributes:
       name: blocked_domains

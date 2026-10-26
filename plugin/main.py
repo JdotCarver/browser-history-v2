@@ -8,6 +8,7 @@ from formatting import (
     URL_FULL,
     format_subtitle,
 )
+from favicons import FaviconStore
 from results import newest_unique, read_profiles
 import platform
 import shutil
@@ -24,6 +25,7 @@ class BrowserHistory(Flox):
 
     # Display defaults live on the class so that an instance built without
     # __init__ (the tests do this) still renders exactly like a configured one.
+    show_favicons = False
     date_display = DATE_ABSOLUTE
     time_format = TIME_12
     url_display = URL_FULL
@@ -86,6 +88,13 @@ class BrowserHistory(Flox):
         self.time_format = self.settings.get("time_format", TIME_12)
         self.url_display = self.settings.get("url_display", URL_FULL)
         self.subtitle_layout = self.settings.get("subtitle_layout", LAYOUT_BRACKETED)
+        # Flow Launcher hands checkboxes back as booleans or as strings,
+        # depending on how the settings were written.
+        self.show_favicons = str(self.settings.get("show_favicons", False)).strip().lower() in (
+            "true",
+            "1",
+            "yes",
+        )
 
         blocked_domains_str = self.settings.get("blocked_domains") or ""
         self.blocked_domains = [
@@ -191,6 +200,8 @@ class BrowserHistory(Flox):
 
         self.browsers = unique_browsers
 
+        self.favicons = FaviconStore(self.cache_dir, self.browsers)
+
         if not self.browsers and not self.init_error:
             self.init_error = (
                 "Could not locate any supported browser profile databases."
@@ -210,6 +221,15 @@ class BrowserHistory(Flox):
             # must not disagree about whether it is still "today".
             now = datetime.now()
 
+            # Icons are looked up after the rows are known, so the icon
+            # database is only opened when icons are switched on.
+            icon_paths = {}
+            if self.show_favicons:
+                try:
+                    icon_paths = self.favicons.resolve(source_items)
+                except Exception:
+                    icon_paths = {}  # never lose results over an icon
+
             if getattr(self, "_warnings", None):
                 self.add_item(
                     title="Some browsers or profiles were skipped",
@@ -218,6 +238,7 @@ class BrowserHistory(Flox):
                 )
 
             for idx, item in enumerate(source_items):
+                icon = icon_paths.get(item.url)
                 self.add_item(
                     title=item.title,
                     subtitle=format_subtitle(
@@ -229,8 +250,9 @@ class BrowserHistory(Flox):
                         url_display=self.url_display,
                         subtitle_layout=self.subtitle_layout,
                     ),
-                    icon=ICON_HISTORY,
-                    glyph=HISTORY_GLYPH,
+                    # A glyph and an icon path would fight for the same slot.
+                    icon=icon or ICON_HISTORY,
+                    glyph=None if icon else HISTORY_GLYPH,
                     method=self.browser_open,
                     parameters=[item.url],
                     context=[item.title, item.url],
