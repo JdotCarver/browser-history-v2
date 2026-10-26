@@ -367,6 +367,41 @@ Levers that remain:
 Not a lever: anything inside the plugin's query or menu code, which together are
 under 9 ms of a 47 ms menu.
 
+## 4l. The details panel is data, not C# (2026-10-26)
+
+`Result.Preview` is deserialised from the same JSON-RPC payload as everything
+else (`JsonRPCPluginBase.ParseResults`, `PropertyNameCaseInsensitive = true`), so
+a Python plugin can populate Flow's details panel. `plugin/preview.py` does.
+
+**What it accepts depends on the Flow version**, which is the trap:
+
+| field | 2.1.4 (released) | dev |
+|---|---|---|
+| `PreviewImagePath`, `IsMedia`, `Description` | yes | yes |
+| `ContentType` ("imageWithText" / "markdown") | **no** | yes |
+
+On 2.1.4 the panel is a text block, so markdown would appear literally. Preview
+descriptions are therefore plain text. Revisit when markdown ships in a release;
+the field can then be added.
+
+`Description` falls back to `SubTitle` when unset -- that is why the panel showed
+the row twice before we started setting it.
+
+Also: `browser.name` is internal (`brave_profile_0`). `preview.browser_label()`
+turns that into "Brave" but leaves a browser genuinely called "Custom Profile 2"
+alone -- only the `_profile_N` suffix is internal.
+
+## 4m. Never print what we would have to redact
+
+The workflow printed `platform.platform()` into the job log, and job logs on a
+public repository are public: no redaction of ours ever touches them.
+`tools/machine_label.py` prints `Windows / AMD64` instead, and `redact.py`
+catches build numbers as a second layer (platform string, bare `10.0.NNNNN`,
+`build NNNNN`, `22H2 (19045)`, macOS and Linux equivalents). Default keeps the OS
+family so timings stay interpretable; `REDACT_OS_FAMILY=1` removes it too.
+
+Rule for new tools: print `describe_machine()`, never `platform.platform()`.
+
 ## 5. Measurement discipline
 
 Tests must pass on Windows as well as here. One trap already paid for: a
