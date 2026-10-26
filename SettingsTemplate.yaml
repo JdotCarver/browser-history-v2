@@ -72,7 +72,7 @@ body:
       name: url_display
       label: URL Display
       defaultValue: Full URL
-      description: Show the full address of each result, just the site it is on (e.g. youtube.com), or the site and its path (e.g. github.com/JdotCarver/PersonalQMK) so two pages on one site stay distinguishable.
+      description: Show the full address of each result. Or just the domain (e.g. github.com), or domain and the path (e.g. github.com/fahim-ahmed05/browser-history-v2).
       options:
         - Full URL
         - Domain only
