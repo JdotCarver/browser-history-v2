@@ -112,10 +112,25 @@ def _visits_for(rng: random.Random, max_age_days: float, age_skew: float) -> Lis
 
 
 def _url_and_title(rng: random.Random, index: int) -> Tuple[str, str]:
+    """A URL and title of realistic *width*.
+
+    Real history rows are fat: a 15,720-row Brave database measured 25.5 MB, about
+    1.6 KB per row, because URLs carry long paths and query strings and titles run
+    to a sentence. Terse fixtures understate the cost of reading a whole table and
+    overstate the cost of reading a few rows, which is the difference the recency
+    walk depends on -- so the width here is deliberately realistic.
+    """
     host = rng.choice(HOSTS)
-    slug = "-".join(rng.choice(WORDS) for _ in range(rng.randint(1, 3)))
-    title = " ".join(rng.choice(WORDS) for _ in range(rng.randint(2, 6)))
-    return f"https://{host}/path/{slug}/{index}", f"{title} #{index}"
+    slug = "-".join(rng.choice(WORDS) for _ in range(rng.randint(4, 8)))
+    query = "&".join(
+        f"{rng.choice(WORDS)}={rng.choice(WORDS)}-{rng.randint(1000, 999999)}"
+        for _ in range(rng.randint(1, 4))
+    )
+    title = " ".join(rng.choice(WORDS) for _ in range(rng.randint(8, 18)))
+    return (
+        f"https://{host}/path/{slug}/{index}?{query}",
+        f"{title.title()} #{index}",
+    )
 
 
 def build_chromium_history(
