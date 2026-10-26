@@ -225,6 +225,33 @@ Measure both RPC shapes: `measure_keystroke.py` reports `menu` alongside
 `idle`/`search`/`absent`, since the menu is the one request that must never be
 slower than the listing it opens onto.
 
+## 4f. The context menu, measured on the owner's machine (run 40358791830)
+
+Inside one already-running process, 25 results, favicons on:
+
+| phase | Windows 10, 28 cores |
+|---|---|
+| `BrowserHistory()` (flox settings + manifest + our settings) | 9.66 ms |
+| discovery + cache upkeep (was in `__init__`) | 6.71 ms |
+| one query, no favicons | 2.05 ms |
+| one query, with favicons | 3.45 ms |
+| the context menu body | 0.003 ms |
+
+Whole-request medians from the same run: **menu 72.4 ms**, idle 110.5, search
+116.9, absent 116.0. The menu is the cheapest request there is -- "plugin work
+only" for it is negative, i.e. below the import floor, which is the interpreter
+plus flox plus this plugin's imports (~64 % of any request, see 4a).
+
+So: the menu was never slow *in this plugin*, before or after the fix (before
+it, add the 6.7 ms of discovery). If it still feels slower than the listing, the
+cause is outside the plugin's work -- Flow spawning the request again, or its
+own menu rendering. `debug = true` in the plugin settings makes flox log
+"Total time" per request, which shows whether one menu press runs twice.
+
+Favicons cost **+1.4 ms** warm on this machine (2.05 -> 3.45), against +0.2 ms
+on the sandbox fixture. Both are real; the difference is the size of the icon
+index and the profile's icon database.
+
 ## 5. Measurement discipline
 
 Tests must pass on Windows as well as here. One trap already paid for: a
