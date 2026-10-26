@@ -1,5 +1,5 @@
 # runner-request.toml
 # Written by tools/github_actions_runner/request_run.sh.
-request_id = "ea922e7c-9d52-4ec1-af69-8ba0514ffc31"
+request_id = "088c0448-a3f1-4896-8464-ceb0b363a5ef"
 target = "local-windows"
-job_name = "Context Menu Cost, In Process"
+job_name = "Trace Session and Menu Cost"
