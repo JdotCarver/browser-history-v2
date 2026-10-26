@@ -78,7 +78,11 @@ git commit -m "Actions: request ${TARGET} run"
 COMMIT="$(git rev-parse HEAD)"
 git push -u origin "HEAD:${BRANCH}"
 
-REPOSITORY="$(gh repo view --json nameWithOwner --jq .nameWithOwner)"
+# Tie API reads to the same repository that received the push. In a fork
+# checkout, an implicit `gh repo view` can otherwise select the upstream.
+ORIGIN_URL="$(git remote get-url origin)"
+REPOSITORY="$(gh repo view "$ORIGIN_URL" --json nameWithOwner --jq .nameWithOwner)"
+export RUNNER_REPOSITORY="$REPOSITORY"
 WORKFLOW_PATH=".github/workflows/runner-request.yml"
 RUN_ID=""
 
@@ -99,7 +103,7 @@ if [ -z "$RUN_ID" ]; then
     exit 1
 fi
 
-RUN_URL="$(gh run view "$RUN_ID" --json url --jq .url)"
+RUN_URL="$(gh run view "$RUN_ID" --repo "$REPOSITORY" --json url --jq .url)"
 printf '\nRun %s: %s\n' "$RUN_ID" "$RUN_URL"
 printf 'Workload name: %s\n' "$JOB_NAME"
 if [[ "$TARGET" == "local-windows" ]]; then
@@ -121,11 +125,11 @@ if [ "$WATCH_EXIT" -ne 0 ]; then
     exit "$WATCH_EXIT"
 fi
 
-CONCLUSION="$(gh run view "$RUN_ID" --json conclusion --jq .conclusion)"
+CONCLUSION="$(gh run view "$RUN_ID" --repo "$REPOSITORY" --json conclusion --jq .conclusion)"
 if [ "$CONCLUSION" = "cancelled" ]; then
     echo "This request was canceled, normally because a newer request superseded it." >&2
     echo "It is not an authoritative workload result. Latest requests on ${BRANCH}:" >&2
-    gh run list --workflow runner-request.yml --branch "$BRANCH" --limit 3
+    gh run list --repo "$REPOSITORY" --workflow runner-request.yml --branch "$BRANCH" --limit 3
     exit 3
 fi
 if ! bash "$SCRIPT_DIRECTORY/fetch_logs.sh" "$RUN_ID"; then

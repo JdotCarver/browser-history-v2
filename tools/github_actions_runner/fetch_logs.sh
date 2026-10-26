@@ -12,6 +12,8 @@ fi
 RUN_ID="$1"
 REPOSITORY_ROOT="$(git rev-parse --show-toplevel)"
 cd "$REPOSITORY_ROOT"
+ORIGIN_URL="$(git remote get-url origin)"
+REPOSITORY="$(gh repo view "$ORIGIN_URL" --json nameWithOwner --jq .nameWithOwner)"
 
 echo "Fetching the actions-logs branch for run ${RUN_ID}..."
 git fetch origin actions-logs:refs/remotes/origin/actions-logs
@@ -19,7 +21,7 @@ git fetch origin actions-logs:refs/remotes/origin/actions-logs
 LOG_PREFIX="runs/${RUN_ID}"
 if ! git ls-tree --name-only "origin/actions-logs" "$LOG_PREFIX" | grep -q .; then
     echo "No exported logs found at ${LOG_PREFIX}." >&2
-    echo "Check the run's Export logs job: gh run view ${RUN_ID}" >&2
+    echo "Check the run's Export logs job: gh run view ${RUN_ID} --repo ${REPOSITORY}" >&2
     exit 1
 fi
 

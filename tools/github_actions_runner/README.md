@@ -83,6 +83,23 @@ where cancellation can leave partial external state.
 
 A PAT in Arena would not solve the signed-URL network blocks.
 
+## First-time registration
+
+The launcher resolves the official Windows binary from the global
+`actions/runner` latest release, then obtains a registration token from the
+target repository. It deliberately does not use the repository-scoped runner
+catalog: GitHub can return an empty catalog for a new repository until Actions
+has processed its first workflow run, even though the global release already
+contains every supported Windows package.
+
+A best-effort permissions preflight offers to enable generally disabled Actions
+only after interactive confirmation. The separate fork workflow gate is not
+misrepresented as that setting. If token registration fails, the launcher reads
+repository, workflow, and run state to provide a specific Actions URL and likely
+cause while preserving GitHub's original error. It never auto-dispatches an
+inherited workflow to force initialization. Reusing an existing registration
+skips this setup path entirely.
+
 ## Request runs from Arena
 
 When a matching self-hosted runner is already available:
@@ -103,8 +120,10 @@ run URL/ID, wait up to 30 minutes, and save logs under `.runner-logs/<run-id>/`.
 Set `RUNNER_WATCH_TIMEOUT_MINUTES` for a different watch limit and
 `RUNNER_POLL_INTERVAL_SECONDS` for the polling cadence. The watcher prints only
 status transitions; use `watch_run.sh RUN_ID` for the same quiet wait during
-recovery. Planner/export jobs are pinned to `ubuntu-24.04` so Ubuntu migration
-annotations do not repeatedly enter agent context.
+recovery. Request, watch, and fetch helpers resolve `owner/repo` from the origin
+URL and pass it explicitly to `gh`, avoiding implicit upstream selection in a
+fork checkout. Planner/export jobs are pinned to `ubuntu-24.04` so Ubuntu
+migration annotations do not repeatedly enter agent context.
 
 ## Log contract and recovery
 
@@ -150,7 +169,7 @@ workflow permissions must allow `contents: write` for the export job.
 
 ## Validation baseline
 
-Validated on 2026-10-24:
+Validation evidence from 2026-10-24 through 2026-10-26:
 
 - Ten contract tests, Ruff lint/format, Python compilation, shell syntax, and
   diff checks pass.
@@ -166,6 +185,9 @@ Validated on 2026-10-24:
 - Run `40209997148` validated a custom `job_name`: GitHub metadata and the
   self-hosted receipt both reported `Runner Job Naming Dogfood`, and the exported
   workload filename used the same name.
+- Run `40338394192` validated the hardened registration launcher on PowerShell 7:
+  its release-JSON self-test selected both Windows x64 and ARM64 packages, and
+  the explicit-origin request/watch/fetch path completed with all jobs green.
 - Local runs `40106210539` and `40106289003` both completed successfully against
   the same open Windows foreground session. Their receipts confirmed
   `self-hosted`, and the second run proved that no relaunch is needed between

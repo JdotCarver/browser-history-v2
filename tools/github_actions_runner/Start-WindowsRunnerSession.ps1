@@ -46,11 +46,15 @@ function Join-NativeOutputLines {
 function Invoke-GitHubApi {
     param([string[]]$Arguments)
 
-    $Output = & gh api @Arguments
-    if ($LASTEXITCODE -ne 0) {
-        throw "GitHub API access failed. Check that your LOCAL gh login can administer $Repository."
+    $CombinedOutput = @(& gh api @Arguments 2>&1)
+    $NativeExitCode = $LASTEXITCODE
+    if ($NativeExitCode -ne 0) {
+        $Detail = ($CombinedOutput | ForEach-Object { $_.ToString() }) -join "`n"
+        throw "GitHub API request failed (gh api $($Arguments -join ' ')).`n$Detail"
     }
 
+    # Keep stdout clean if gh writes a warning to stderr during a successful call.
+    $Output = @($CombinedOutput | Where-Object { $_ -is [string] })
     return Join-NativeOutputLines -Lines $Output
 }
 
@@ -80,21 +84,142 @@ function Get-RepositoryFromOrigin {
     return $RepositoryPath
 }
 
+function Get-RunnerPackage {
+    param(
+        [object]$Release,
+        [string]$Architecture
+    )
+
+    # Release assets are global; the repository download catalog can be empty
+    # until a new repository has initialized Actions with its first run.
+    $ExpectedName = "^actions-runner-win-$Architecture-\d+\.\d+\.\d+\.zip$"
+    $Asset = $Release.assets |
+        Where-Object { $_.name -match $ExpectedName } |
+        Select-Object -First 1
+    if ($null -eq $Asset) {
+        $AvailableAssets = $Release.assets | ForEach-Object { $_.name }
+        throw "Latest actions/runner release $($Release.tag_name) has no Windows/$Architecture ZIP. Assets: $($AvailableAssets -join ', ')"
+    }
+    if ([string]::IsNullOrWhiteSpace($Asset.browser_download_url)) {
+        throw "Runner asset $($Asset.name) has no download URL."
+    }
+
+    return [pscustomobject]@{
+        filename = $Asset.name
+        download_url = $Asset.browser_download_url
+        version = $Release.tag_name.TrimStart("v")
+    }
+}
+
+function Confirm-GitHubActionsEnabled {
+    param([string]$Repository)
+
+    try {
+        $Permissions = (Invoke-GitHubApi -Arguments @(
+            "repos/$Repository/actions/permissions"
+        )) | ConvertFrom-Json
+    }
+    catch {
+        # Registration may still work with a token whose preflight access differs.
+        Write-Host "Actions permissions could not be preflighted; registration will still be attempted."
+        Write-Verbose ($_.Exception.Message)
+        return
+    }
+
+    if ($Permissions.enabled -ne $false) {
+        return
+    }
+
+    $SettingsUrl = "https://github.com/$Repository/settings/actions"
+    $Confirmation = Read-Host "GitHub Actions is disabled for $Repository. Enable it now? [y/N]"
+    if ([string]::IsNullOrWhiteSpace($Confirmation) -or
+        $Confirmation.Trim() -notmatch "^(y|yes)$") {
+        throw "Actions remains disabled. Enable it at $SettingsUrl and retry."
+    }
+
+    Invoke-GitHubApi -Arguments @(
+        "--method", "PUT",
+        "repos/$Repository/actions/permissions",
+        "-F", "enabled=true"
+    ) | Out-Null
+    Write-Host "GitHub Actions is now enabled for $Repository."
+}
+
+function Get-ActionsSetupGuidance {
+    param([string]$Repository)
+
+    # These reads are best-effort: preserve the registration error even when the
+    # same credentials cannot read one of the diagnostic endpoints.
+    $RepositoryInfo = $null
+    $Permissions = $null
+    $Workflows = $null
+    $Runs = $null
+    try {
+        $RepositoryInfo = (Invoke-GitHubApi -Arguments @("repos/$Repository")) | ConvertFrom-Json
+    }
+    catch {}
+    try {
+        $Permissions = (Invoke-GitHubApi -Arguments @(
+            "repos/$Repository/actions/permissions"
+        )) | ConvertFrom-Json
+    }
+    catch {}
+    try {
+        $Workflows = (Invoke-GitHubApi -Arguments @(
+            "repos/$Repository/actions/workflows"
+        )) | ConvertFrom-Json
+    }
+    catch {}
+    try {
+        $Runs = (Invoke-GitHubApi -Arguments @(
+            "repos/$Repository/actions/runs?per_page=1"
+        )) | ConvertFrom-Json
+    }
+    catch {}
+
+    $ActionsUrl = "https://github.com/$Repository/actions"
+    if ($null -ne $Permissions -and $Permissions.enabled -eq $false) {
+        return "Actions is disabled. Enable it at https://github.com/$Repository/settings/actions and retry."
+    }
+    if ($null -ne $RepositoryInfo -and
+        $RepositoryInfo.fork -eq $true -and
+        $null -ne $Workflows -and
+        $Workflows.total_count -eq 0) {
+        return "This fork has no registered workflows. If workflow files were inherited, enable them at $ActionsUrl (separate from the general Actions permission); otherwise inspect the default branch."
+    }
+    if ($null -ne $Workflows -and $Workflows.total_count -eq 0) {
+        return "No workflows are registered on the default branch. Inspect the Actions setup at $ActionsUrl."
+    }
+    if ($null -ne $Runs -and $Runs.total_count -eq 0) {
+        return "Actions reports no workflow runs. For a new repository, one existing GitHub-hosted workflow run can finish backend initialization. Start it from $ActionsUrl, then retry registration."
+    }
+    return "Check that your local gh login can administer $Repository and inspect its Actions setup at $ActionsUrl."
+}
+
 if ($SelfTest) {
     $SampleJsonLines = @(
-        '[',
-        '  {"os":"win","architecture":"x64","filename":"runner.zip"},',
-        '  {"os":"linux","architecture":"x64","filename":"runner.tar.gz"}',
-        ']'
+        '{',
+        '  "tag_name": "v2.338.1",',
+        '  "assets": [',
+        '    {"name":"actions-runner-linux-x64-2.338.1.tar.gz","browser_download_url":"https://example.invalid/linux"},',
+        '    {"name":"actions-runner-win-arm64-2.338.1.zip","browser_download_url":"https://example.invalid/arm64"},',
+        '    {"name":"actions-runner-win-x64-2.338.1.zip","browser_download_url":"https://example.invalid/x64"}',
+        '  ]',
+        '}'
     )
-    $Downloads = (Join-NativeOutputLines -Lines $SampleJsonLines) | ConvertFrom-Json
-    $WindowsDownload = $Downloads |
-        Where-Object { $_.os -eq "win" -and $_.architecture -eq "x64" } |
-        Select-Object -First 1
-    if ($null -eq $WindowsDownload -or $WindowsDownload.filename -ne "runner.zip") {
-        throw "Multi-line JSON self-test failed."
+    $Release = (Join-NativeOutputLines -Lines $SampleJsonLines) | ConvertFrom-Json
+    $WindowsDownload = Get-RunnerPackage -Release $Release -Architecture "x64"
+    if ($WindowsDownload.filename -ne "actions-runner-win-x64-2.338.1.zip" -or
+        $WindowsDownload.download_url -ne "https://example.invalid/x64" -or
+        $WindowsDownload.version -ne "2.338.1") {
+        throw "Runner package self-test failed."
     }
-    Write-Host "PowerShell multi-line JSON self-test passed."
+    $ArmDownload = Get-RunnerPackage -Release $Release -Architecture "arm64"
+    if ($ArmDownload.filename -ne "actions-runner-win-arm64-2.338.1.zip" -or
+        $ArmDownload.download_url -ne "https://example.invalid/arm64") {
+        throw "ARM64 runner package self-test failed."
+    }
+    Write-Host "PowerShell multi-line JSON and runner-package self-test passed."
     return
 }
 
@@ -174,18 +299,13 @@ try {
             throw "Credentials exist without runner settings. Remove $InstallDirectory after inspection, then retry."
         }
 
-        Write-Step "Resolving the runner package approved for this repository"
-        $DownloadsJson = Invoke-GitHubApi -Arguments @("repos/$Repository/actions/runners/downloads")
-        $Downloads = $DownloadsJson | ConvertFrom-Json
-        # The runner-download API uses "win" for Windows packages.
-        $RunnerDownload = $Downloads |
-            Where-Object { $_.os -eq "win" -and $_.architecture -eq $Architecture } |
-            Select-Object -First 1
-        if ($null -eq $RunnerDownload) {
-            $AvailableTargets = $Downloads |
-                ForEach-Object { "$($_.os)/$($_.architecture)" }
-            throw "No Windows/$Architecture package was returned. Available targets: $AvailableTargets"
-        }
+        Confirm-GitHubActionsEnabled -Repository $Repository
+
+        Write-Step "Resolving the latest official runner package"
+        $Release = (Invoke-GitHubApi -Arguments @(
+            "repos/actions/runner/releases/latest"
+        )) | ConvertFrom-Json
+        $RunnerDownload = Get-RunnerPackage -Release $Release -Architecture $Architecture
 
         $CacheDirectory = Join-Path $RunnerRoot "_downloads"
         New-Item -ItemType Directory -Path $CacheDirectory -Force | Out-Null
@@ -225,13 +345,20 @@ try {
 
         Set-Location $InstallDirectory
         Write-Step "Registering $RunnerName"
-        $RegistrationToken = (Invoke-GitHubApi -Arguments @(
-            "--method", "POST",
-            "repos/$Repository/actions/runners/registration-token",
-            "--jq", ".token"
-        )).Trim()
-        if ([string]::IsNullOrWhiteSpace($RegistrationToken)) {
-            throw "GitHub returned an empty registration token."
+        try {
+            $RegistrationToken = (Invoke-GitHubApi -Arguments @(
+                "--method", "POST",
+                "repos/$Repository/actions/runners/registration-token",
+                "--jq", ".token"
+            )).Trim()
+            if ([string]::IsNullOrWhiteSpace($RegistrationToken)) {
+                throw "GitHub returned an empty registration token."
+            }
+        }
+        catch {
+            $RegistrationError = $_.Exception.Message
+            $SetupGuidance = Get-ActionsSetupGuidance -Repository $Repository
+            throw "Could not obtain a runner registration token. $SetupGuidance`nUnderlying error: $RegistrationError"
         }
 
         $ConfigureArguments = @(

@@ -21,12 +21,23 @@ if [[ ! "$WATCH_TIMEOUT_MINUTES" =~ ^[1-9][0-9]*$ ]]; then
     exit 2
 fi
 
+# request_run.sh exports the push repository; standalone recovery uses origin.
+REPOSITORY="${RUNNER_REPOSITORY:-}"
+if [ -z "$REPOSITORY" ]; then
+    ORIGIN_URL="$(git remote get-url origin)"
+    REPOSITORY="$(gh repo view "$ORIGIN_URL" --json nameWithOwner --jq .nameWithOwner)"
+fi
+if [[ ! "$REPOSITORY" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]]; then
+    echo "Could not resolve owner/repo from origin: $REPOSITORY" >&2
+    exit 2
+fi
+
 DEADLINE=$((SECONDS + WATCH_TIMEOUT_MINUTES * 60))
 PREVIOUS_STATUS=""
-printf 'Watching run %s (status changes only).\n' "$RUN_ID"
+printf 'Watching run %s in %s (status changes only).\n' "$RUN_ID" "$REPOSITORY"
 
 while true; do
-    STATE="$(gh run view "$RUN_ID" --json status,conclusion --jq '[.status, .conclusion] | @tsv')"
+    STATE="$(gh run view "$RUN_ID" --repo "$REPOSITORY" --json status,conclusion --jq '[.status, .conclusion] | @tsv')"
     STATUS="${STATE%%$'\t'*}"
     CONCLUSION="${STATE#*$'\t'}"
 

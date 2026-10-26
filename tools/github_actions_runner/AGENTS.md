@@ -12,9 +12,15 @@ The scripts are the interface; do not improvise a second dispatch/log mechanism.
   dispatches through a push instead.
 - Runner administration/registration is denied in Arena. Run the PowerShell
   launcher only on the user's Windows machine. Never request its token in chat.
+- The launcher resolves binaries from the global `actions/runner` latest release,
+  not the target repository's runner catalog. A new repository can return an
+  empty catalog until its first workflow run. Keep registration tokens
+  repository-scoped and never auto-dispatch a workflow to initialize Actions.
 - `gh run view --log` and artifact downloads follow blocked signed URLs. Use the
   workflow's Export logs job and `fetch_logs.sh`; do not treat this as a metadata
   API failure.
+- Pass `--repo OWNER/REPO` in ad hoc `gh run` commands. In a fork checkout, an
+  implicit repository can resolve to upstream and produce a misleading 404.
 - Never install a runner in the Arena sandbox. The runner belongs on the user's
   machine.
 
@@ -65,8 +71,8 @@ justifies a longer wait.
   canceled, normally because a newer request superseded it. Do not treat that as
   a workload failure, and do not silently attach to another run.
 - After cancellation, inspect the printed latest requests or use
-  `gh run list --workflow runner-request.yml --limit 5`. Only the latest request
-  is authoritative for the current tree.
+  `gh run list --repo OWNER/REPO --workflow runner-request.yml --limit 5`. Only
+  the latest request is authoritative for the current tree.
 - Do not copy this cancellation policy blindly to side-effecting production
   workflows; partial uploads/external writes need a separate design.
 
@@ -75,8 +81,8 @@ justifies a longer wait.
 1. Find the request run without downloading logs:
 
    ```bash
-   gh run list --workflow runner-request.yml --limit 10
-   gh run view RUN_ID --json status,conclusion,url,jobs
+   gh run list --repo OWNER/REPO --workflow runner-request.yml --limit 10
+   gh run view RUN_ID --repo OWNER/REPO --json status,conclusion,url,jobs
    ```
 
 2. If still active, use `bash tools/github_actions_runner/watch_run.sh RUN_ID`.
