@@ -1,5 +1,5 @@
 # runner-request.toml
 # Written by tools/github_actions_runner/request_run.sh.
-request_id = "2a0a341a-baa2-4644-a0bb-522354fa9adf"
+request_id = "e5ff9017-b0f9-411a-b1fb-191a4fdc5bee"
 target = "local-windows"
-job_name = "Early Exit and the Doubled Menu"
+job_name = "Redaction and Details Panel"
