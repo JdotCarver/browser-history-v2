@@ -94,38 +94,53 @@ The benchmark runs each side in its own subprocess (as Flow Launcher does) and
 extracts the published `plugin/browsers.py` from git, so the comparison is
 against the real published code rather than a copy of it.
 
-## 4a. Evidence from the owner's machine (run 40349238896, 2026-10-26)
+## 4a. Evidence from the owner's machine (runs 40349238896, 40350654072)
 
-Windows 10, 28 cores, Python 3.13.14, sqlite 3.50.4. Real profiles found:
-Edge (6 rows), Brave `Profile 0` (15,720 rows / 25.5 MB, the real one), Brave
-`Profile 1` (55 rows). No Firefox installed, so Firefox is shipped for
-correctness and measured only on synthetic data.
+Windows 10, 28 cores, Python 3.13.14, sqlite 3.50.4. Real profiles: Edge (6
+rows), Brave `Profile 0` (15,720 rows / 25.5 MB, the real one), Brave `Profile 1`
+(56 rows). No Firefox installed, so Firefox ships for correctness and is measured
+on synthetic data only.
 
-| measurement | value |
+### The keystroke, end to end (`tools/perf/measure_keystroke.py`)
+
+| step | median |
 |---|---|
-| cold copy of the 25.5 MB database | 7.45 ms |
-| cached copy check | 0.10 ms |
-| every profile, empty query | 11.38 ms |
-| every profile, frequent term (500 rows) | 7.89 ms |
-| every profile, term matching nothing | 5.16 ms |
+| interpreter starts | 16.2 ms |
+| + `flox` import | 57.9 ms |
+| + this plugin's imports | 78.3 ms |
+| **full keystroke, idle listing** | **122.1 ms** (500 results) |
+| full keystroke, matching search | 128.8 ms (500 results) |
+| full keystroke, no match yet | 120.6 ms (0 results) |
 
-So all database work for one keystroke is 12-19 ms on this machine. Synthetic
-A/B on the same machine (2 Chromium + 2 Firefox profiles x 100k URLs, medians of
-5): 74 -> 17 ms (4.4x) empty, 132 -> 25 ms (5.2x) common, 163 -> 33 ms (4.9x)
-multi-word, 115 -> 113 ms (1.0x) no-match. All 38 tests pass on Windows 3.13.
+So **64 % of a keystroke is imports**, and the plugin's own work is 42-51 ms.
+Within that work the database is now 2.5 ms (idle) to 8 ms (a matching search),
+which means **rendering 500 items plus init and teardown is the next target, not
+SQL**. `flox` alone is 41.7 ms of the imports and cannot be removed; whether
+`pyperclip` (imported eagerly in `main.py`) can be deferred is unmeasured.
 
-**Conclusion: this machine is past the point where query tuning pays.** What is
-left per keystroke is interpreter start-up plus the `flox` import, which has not
-been measured end-to-end yet. That is the next thing to measure, not another
-query rewrite. Note also that `tools/perf/diagnose.py` reports no URLs, titles
-or search terms, but the runner bridge publishes full job logs (including local
-paths) to the `actions-logs` branch, which is world-readable on a public repo.
+### Query work per profile
 
-Remaining measured opportunity, if it is ever wanted: for the *empty* query only,
-Chromium's `visits` walk fills the page immediately (the newest visits are by
-definition all matches), which would take the 11.24 ms empty query on Brave to
-roughly 4 ms. It is switched off today because that same walk loses by up to 5x
-once a search term is involved.
+| measurement | before | now |
+|---|---|---|
+| cold copy of the 25.5 MB database | 7.45 ms | 7.48 ms |
+| cached copy check | 0.10 ms | 0.10 ms |
+| Brave, idle listing | 11.24 ms | **1.85 ms** |
+| Brave, frequent term | 7.89 ms | 8.28 ms |
+| Brave, term matching nothing | 5.06 ms | 5.10 ms |
+| all profiles, idle listing | 11.38 ms | **2.50 ms** |
+
+The idle listing is the win: the recency walk fills the page in 1.85 ms instead of
+sorting the whole `urls` table.
+
+### Synthetic A/B on the same machine
+
+2 Chromium + 2 Firefox profiles x 100k realistically wide URLs, medians of 5:
+75 -> 21 ms (3.6x) idle, 131 -> 25 ms (5.2x) common, 128 -> 25 ms (5.2x) medium,
+161 -> 34 ms (4.8x) multi-word, 116 -> 115 ms (1.0x) no-match. The no-match case
+ends in the same full scan on both sides; it only improves where a Firefox-sized
+history made the old query walk every visit.
+
+40 plugin tests and 9 redaction tests pass on Windows 3.13 and in the sandbox.
 
 ## 4b. Rules we now hold the code to
 
