@@ -1,0 +1,163 @@
+# tests/test_plugin_main.py
+"""The Flow Launcher glue: how many rows each profile is asked for, and what is shown."""
+
+import datetime
+import sys
+import unittest
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO_ROOT / "plugin"))
+sys.path.insert(0, str(REPO_ROOT / "tests"))
+
+import flow_stub  # noqa: E402
+
+flow_stub.install()
+
+import main  # noqa: E402
+
+
+class FakeItem:
+    """Stands in for `browsers.HistoryItem` where `main` only needs to display it."""
+
+    def __init__(self, title, url, visited_at):
+        self.title = title
+        self.url = url
+        self._visited_at = visited_at
+
+    def timestamp(self):
+        return datetime.datetime(2024, 1, 1, 12, 0, 0)
+
+    def normalized_time(self):
+        return self._visited_at
+
+
+def make_plugin(history_limit=1000, max_ui_results=500, browsers=None):
+    """A plugin instance with the settings that `__init__` would have read."""
+    plugin = object.__new__(main.BrowserHistory)
+    plugin.browsers = browsers if browsers is not None else [object()]
+    plugin.history_limit = history_limit
+    plugin.max_ui_results = max_ui_results
+    plugin.blocked_domains = []
+    plugin._warnings = []
+    plugin.items = []
+    return plugin
+
+
+class RowBudgetTests(unittest.TestCase):
+    def read_with_budget(self, history_limit, max_ui_results):
+        captured = {}
+
+        def fake_read_profiles(browsers, search_term, limit, blocked_domains):
+            captured["limit"] = limit
+            captured["search_term"] = search_term
+            return [], []
+
+        original = main.read_profiles
+        main.read_profiles = fake_read_profiles
+        try:
+            make_plugin(history_limit, max_ui_results)._get_combined_history("a term")
+        finally:
+            main.read_profiles = original
+        return captured
+
+    def test_budget_is_capped_by_what_the_ui_can_show(self):
+        """Reading 1000 rows per profile for a 500-row display wastes work."""
+        self.assertEqual(self.read_with_budget(1000, 500)["limit"], 500)
+
+    def test_a_lower_history_limit_still_wins(self):
+        self.assertEqual(self.read_with_budget(200, 500)["limit"], 200)
+
+    def test_equal_limits_are_unchanged(self):
+        self.assertEqual(self.read_with_budget(300, 300)["limit"], 300)
+
+    def test_search_term_reaches_the_profiles(self):
+        self.assertEqual(self.read_with_budget(1000, 500)["search_term"], "a term")
+
+
+class CombinedHistoryTests(unittest.TestCase):
+    def test_newest_row_wins_when_profiles_disagree_about_a_url(self):
+        """Two browsers can both know a URL; the more recent visit must be shown."""
+        items = [
+            FakeItem("Newer", "https://example.com/shared", 300),
+            FakeItem("Older", "https://example.com/shared", 100),
+            FakeItem("Other", "https://example.com/other", 200),
+        ]
+
+        original = main.read_profiles
+        main.read_profiles = lambda *args, **kwargs: (items, [])
+        try:
+            combined = make_plugin()._get_combined_history("term")
+        finally:
+            main.read_profiles = original
+
+        self.assertEqual([item.title for item in combined], ["Newer", "Other"])
+
+    def test_combined_history_is_capped_by_the_ui_limit(self):
+        items = [FakeItem(f"Item {index}", f"https://example.com/{index}", index)
+                 for index in range(20)]
+
+        original = main.read_profiles
+        main.read_profiles = lambda *args, **kwargs: (items, [])
+        try:
+            combined = make_plugin(max_ui_results=5)._get_combined_history("term")
+        finally:
+            main.read_profiles = original
+
+        self.assertEqual(len(combined), 5)
+
+
+class QueryRenderingTests(unittest.TestCase):
+    def test_results_are_rendered_with_their_timestamp_and_url(self):
+        plugin = make_plugin()
+        plugin._get_combined_history = lambda query: [
+            FakeItem("Shared", "https://example.com/shared", 300),
+            FakeItem("Other", "https://example.com/other", 200),
+        ]
+
+        plugin.query("term")
+
+        self.assertEqual([item["title"] for item in plugin.items], ["Shared", "Other"])
+        self.assertIn("https://example.com/shared", plugin.items[0]["subtitle"])
+        self.assertIn("Jan 01, 2024", plugin.items[0]["subtitle"])
+        self.assertEqual(plugin.items[0]["parameters"], ["https://example.com/shared"])
+
+    def test_skipped_profiles_are_reported_above_the_results(self):
+        plugin = make_plugin()
+
+        def combined(query):
+            plugin._warnings = ["edge: database is locked"]
+            return [FakeItem("Result", "https://example.com/", 1)]
+
+        plugin._get_combined_history = combined
+        plugin.query("term")
+
+        self.assertEqual(len(plugin.items), 2)
+        self.assertEqual(plugin.items[0]["title"], "Some browsers or profiles were skipped")
+        self.assertIn("database is locked", plugin.items[0]["subtitle"])
+        self.assertEqual(plugin.items[1]["title"], "Result")
+
+    def test_no_browsers_shows_an_explanation(self):
+        plugin = make_plugin(browsers=[])
+        plugin.init_error = "Could not locate any supported browser profile databases."
+
+        plugin.query("term")
+
+        self.assertEqual(len(plugin.items), 1)
+        self.assertEqual(plugin.items[0]["title"], "Browser not available")
+
+    def test_a_failing_search_shows_the_error_instead_of_crashing(self):
+        plugin = make_plugin()
+
+        def exploding(query):
+            raise RuntimeError("something broke")
+
+        plugin._get_combined_history = exploding
+        plugin.query("term")
+
+        self.assertEqual(plugin.items[0]["title"], "An error occurred")
+        self.assertIn("something broke", plugin.items[0]["subtitle"])
+
+
+if __name__ == "__main__":
+    unittest.main()

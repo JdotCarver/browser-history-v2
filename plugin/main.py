@@ -1,7 +1,7 @@
 from flox import Flox, ICON_HISTORY, ICON_BROWSER, ICON_FILE
 import pyperclip
 import browsers
-from urllib.parse import urlparse
+from results import newest_unique, read_profiles
 import platform
 import shutil
 import time
@@ -211,34 +211,15 @@ class BrowserHistory(Flox):
             )
 
     def _get_combined_history(self, query):
-        combined_history = []
-        self._warnings = []
+        # No profile can contribute more rows than the UI will ever show, and a
+        # single profile's rows are already newest-first, so reading deeper than
+        # that only moves rows that would be discarded anyway.
+        row_budget = min(self.history_limit, self.max_ui_results)
 
-        for browser in self.browsers:
-            try:
-                combined_history.extend(
-                    browser.history(
-                        search_term=query,
-                        limit=self.history_limit,
-                        blocked_domains=self.blocked_domains,
-                    )
-                )
-            except FileNotFoundError:
-                continue
-            except OSError as e:
-                self._warnings.append(f"{browser.name}: {e}")
-                continue
-
-        seen_urls = set()
-        unique_history = []
-        for item in combined_history:
-            if item.url not in seen_urls:
-                unique_history.append(item)
-                seen_urls.add(item.url)
-
-        unique_history.sort(key=lambda x: x.normalized_time(), reverse=True)
-
-        return unique_history[: self.max_ui_results]
+        items, self._warnings = read_profiles(
+            self.browsers, query, row_budget, self.blocked_domains
+        )
+        return newest_unique(items, self.max_ui_results)
 
     def context_menu(self, data):
         self.add_item(
