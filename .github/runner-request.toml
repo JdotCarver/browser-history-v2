@@ -1,5 +1,5 @@
 # runner-request.toml
 # Written by tools/github_actions_runner/request_run.sh.
-request_id = "f25bbc13-cca7-448c-a787-99a2bbc03f6d"
+request_id = "56f2bb91-5ebf-4b84-bb4c-a9572deab68f"
 target = "local-windows"
-job_name = "Tracing removed, WAL and www fixes"
+job_name = "Favicon chain for two sites"
