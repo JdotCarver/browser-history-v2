@@ -1,0 +1,34 @@
+{
+  "capture_note": "Status is captured while Export logs is still in progress; use the final workflow conclusion for that job's result.",
+  "conclusion": null,
+  "event": "push",
+  "head_branch": "arena/b80febd6-browser-history-v2",
+  "head_sha": "af58e4052bbd3fc4d445732b60f1416e9597d81e",
+  "id": 40504957093,
+  "jobs": [
+    {
+      "conclusion": "success",
+      "id": 122191785251,
+      "name": "Select runner",
+      "status": "completed",
+      "url": "https://github.com/JdotCarver/browser-history-v2/actions/runs/40504957093/job/122191785251"
+    },
+    {
+      "conclusion": "success",
+      "id": 122191840564,
+      "name": "What is installed",
+      "status": "completed",
+      "url": "https://github.com/JdotCarver/browser-history-v2/actions/runs/40504957093/job/122191840564"
+    },
+    {
+      "conclusion": null,
+      "id": 122192084472,
+      "name": "Export logs",
+      "status": "in_progress",
+      "url": "https://github.com/JdotCarver/browser-history-v2/actions/runs/40504957093/job/122192084472"
+    }
+  ],
+  "name": "Runner request",
+  "status": "in_progress",
+  "url": "https://github.com/JdotCarver/browser-history-v2/actions/runs/40504957093"
+}
