@@ -183,6 +183,23 @@ def chain(icons_copy, chromium: bool, url: str, verbose: bool):
         connection.close()
 
 
+def report_build(installed: Path) -> None:
+    """Which build is installed, and does its icon code match this checkout?"""
+    try:
+        version = json.loads((installed / "plugin.json").read_text(encoding="utf-8")).get("Version")
+    except (OSError, ValueError):
+        version = None
+    print(f"  version: {version or 'unknown'}")
+
+    theirs = next(iter(sorted(installed.rglob("favicons.py"))), None)
+    if theirs is None:
+        print("  no favicons module in the installed build")
+        return
+    mine = PLUGIN_DIR / "favicons.py"
+    same = theirs.read_bytes() == mine.read_bytes()
+    print(f"  icon code: {'identical to this checkout' if same else 'DIFFERS from this checkout'}")
+
+
 def installed_cache(urls):
     """What the installed plugin already decided, from its own icon index.
 
@@ -203,8 +220,10 @@ def installed_cache(urls):
             continue
         if not isinstance(index, dict):
             continue
-        print(f"\n=== installed plugin: {index_path.parent.parent.parent.parent.name} ===")
+        installed = index_path.parent.parent.parent
+        print(f"\n=== installed plugin: {installed.name} ===")
         print(f"  {len(index)} addresses cached")
+        report_build(installed)
         for url in urls:
             name = index.get(url)
             if not name:
