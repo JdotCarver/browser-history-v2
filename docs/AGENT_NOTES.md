@@ -298,16 +298,16 @@ This is the floor for a JSON-RPC plugin: Flow spawns a process per request, so
 nothing inside the plugin can go below it. Only two things can move it -- fewer
 bytes to import, or Defender exclusions for the interpreter and plugin folder.
 
-To see this on the real launcher: turn on "Trace Requests", use Flow for a
-minute, then `python tools/perf/read_trace.py "<...>/Settings/Plugins/Browser History V2/requests.jsonl"`.
-`tools/perf/watch_launches.ps1` records the same launches from outside, which is
-how to tell one press from two.
+**The tracing that produced these numbers has been removed** (2026-10-27, at the
+owner's request: it served its purpose and this is not our app, so the shipped
+additions stay minimal). Reproduce a measurement by timing the plugin from the
+outside -- a wrapper that logs a timestamp either side of a request is enough.
 
 ## 4i. The context menu is asked for twice per press (owner trace, 2026-10-26)
 
-The owner's trace (Flow 2.1.4, Windows 10) is the fixture
-`tests/fixtures/trace-owner-windows-flow-2.1.4.jsonl`: 52 requests over about a
-minute, no search text or URLs in it.
+Recorded from the owner's machine (Flow 2.1.4, Windows 10): a 52-request trace
+over about a minute, with no search text or URLs in it. The fixture and the
+instrument that produced it have both been removed; the result stands.
 
 | | query | menu |
 |---|---|---|
@@ -327,10 +327,9 @@ menu is two processes of 47.2 ms, ~121 ms apart.
 It is not a timeout retry on our side: each menu process finished in ~47 ms
 while the second did not start until ~121 ms, so the first had already answered.
 
-`read_trace.duplicates()` encodes this, and
-`tests/test_trace_fixture.py` asserts the nine pairs so the evidence cannot be
-lost. Next step is upstream, not here: Flow spawns two context_menu requests per
-press. Nothing a plugin does can merge them.
+The count is the finding: nine presses, eighteen requests, 101-139 ms apart. Next
+step is upstream, not here -- Flow spawns two context_menu requests per press,
+and nothing a plugin does can merge them.
 
 ## 4j. Answering before teardown: 10 ms on Linux, ~3 ms on Windows
 
@@ -401,6 +400,47 @@ catches build numbers as a second layer (platform string, bare `10.0.NNNNN`,
 family so timings stay interpretable; `REDACT_OS_FAMILY=1` removes it too.
 
 Rule for new tools: print `describe_machine()`, never `platform.platform()`.
+
+## 4n. Favicons: the browser's history page is not the icon store (2026-10-27)
+
+Owner report: some sites get an icon in Flow, some do not, though the icon shows
+in the browser's own history page. Those two are not the same evidence --
+chrome://history fetches an icon from the site when it has none on disk.
+
+The plugin's chain is: history row -> `icon_mapping` row -> `favicon_bitmaps`
+row -> image data. `tools/favicon_report.py` walks it on the real profile and
+says which link is missing:
+
+    python tools/favicon_report.py                       # the newest 25 rows
+    python tools/favicon_report.py https://example.com/  # one address, in detail
+
+Three verdicts, three different fixes: no mapping row (nothing was ever stored
+locally, so no plugin can draw it), mapping without a drawable bitmap (usually
+SVG -- Flow cannot render it), or "not in this profile's history" (the row comes
+from another profile, and its icons live in that profile's store).
+
+**Do not run it in CI**: it prints browsing history into a public log.
+
+Two real defects found while looking:
+
+* **The write-ahead log was not being copied.** SQLite can hold recent writes in
+  `<database>-wal` without touching the main file, so a main-file copy silently
+  reads the state as of the last checkpoint -- and, because that file's
+  timestamp does not move either, the stale copy looked fresh forever. Firefox
+  keeps favicons.sqlite this way. `_cache_copy` now copies the log, drops it
+  when the browser has, and treats the copy as fresh only if time *and* size
+  agree (timestamps can be coarse enough for two writes to share a tick).
+* **`www.` mismatch.** A site that redirects between `example.com` and
+  `www.example.com` leaves the icon filed under one spelling and the history row
+  under the other. The lookup now tries the alternate spelling before giving up,
+  which needs no table of sites -- the two hosts are the same site in practice.
+
+Chromium's favicon database does **not** use WAL (`FaviconDatabase` sets only
+page size and cache size; `sql::Database` requires `set_wal_mode(true)`), so the
+log fix is not Brave's answer. Ruled out for Brave, having read the source:
+PNG-encoded `image_data` (so the format filter is not it), and the host-range
+fallback (an icon mapped only to the site root is found for a deeper URL --
+verified end to end).
 
 ## 5. Measurement discipline
 
