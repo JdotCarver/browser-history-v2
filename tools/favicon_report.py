@@ -35,6 +35,14 @@ import favicons  # noqa: E402
 DEFAULT_ROWS = 25
 
 
+class FakeItem:
+    """The only two things the icon store asks of a result."""
+
+    def __init__(self, url, browser):
+        self.url = url
+        self.browser = browser
+
+
 def profiles():
     """Every profile on this machine that the plugin would consider."""
     found = []
@@ -219,6 +227,10 @@ def report(urls, limit=DEFAULT_ROWS):
             print(f"  icon store unreadable: {error}")
             continue
 
+        # What the plugin itself would hand Flow, cache and all.
+        store = favicons.FaviconStore(cache / "favicons-probe")
+        resolved = store.resolve([FakeItem(url, browser) for url in wanted])
+
         counts = {}
         for url in wanted:
             verdict, rows = chain(icons_copy, chromium, url, verbose=bool(urls))
@@ -229,6 +241,11 @@ def report(urls, limit=DEFAULT_ROWS):
             for row in rows:
                 print(row)
             print(f"    -> {verdict}")
+            path = resolved.get(url)
+            if path:
+                print(f"    -> plugin hands Flow {Path(path).name} ({Path(path).stat().st_size} bytes)")
+            else:
+                print("    -> plugin hands Flow nothing")
 
         if not urls:
             print("  summary:")
