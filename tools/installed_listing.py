@@ -1,10 +1,30 @@
+# tools/installed_listing.py
+"""Find the installed Browser History V2 code and describe it."""
+
+import hashlib
+import json
+import os
 from pathlib import Path
-root = Path(__import__("os").getenv("APPDATA", "")) / "FlowLauncher/Settings/Plugins"
-for d in sorted(root.iterdir()):
-    if not d.is_dir():
+
+root = Path(os.getenv("APPDATA", "")) / "FlowLauncher"
+print("looking under:", root)
+
+for manifest in sorted(root.rglob("plugin.json")):
+    try:
+        data = json.loads(manifest.read_text(encoding="utf-8-sig"))
+    except (OSError, ValueError):
         continue
-    files = [p.name for p in d.iterdir()]
-    print(d.name, "->", sorted(files)[:12])
-    pj = d / "plugin.json"
-    if pj.exists():
-        print("   version:", __import__("json").loads(pj.read_text(encoding="utf-8-sig")).get("Version"))
+    if "Browser History" not in data.get("Name", ""):
+        continue
+    folder = manifest.parent
+    print(f"\n{folder}")
+    print(f"  version: {data.get('Version')}  keyword: {data.get('ActionKeyword')}")
+    files = sorted(p.relative_to(folder).as_posix() for p in folder.rglob("*.py"))
+    print(f"  python files: {len(files)}")
+    for name in files:
+        if name.endswith(("favicons.py", "main.py", "preview.py")):
+            digest = hashlib.sha256((folder / name).read_bytes()).hexdigest()[:12]
+            print(f"    {name} ({digest})")
+        print(f"    . {name}") if False else None
+    cache = folder / "Cache" / "favicons" / "index.json"
+    print(f"  cache beside the code: {'yes' if cache.exists() else 'no'}")
