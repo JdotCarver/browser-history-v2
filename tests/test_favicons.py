@@ -356,6 +356,38 @@ class Failures(TempCache):
         self.assertEqual(self.store().resolve([]), {})
 
 
+class AlternateHost(TempCache):
+    """A site that redirects between `example.com` and `www.example.com`."""
+
+    def resolved(self, history_url, filed_url):
+        icons = make_chromium_icons(self.root / "Favicons", [(filed_url, png(b"site"), 32)])
+        browser = FakeBrowser(icons)
+        return self.store([browser]).resolve([FakeItem(history_url, browser)])
+
+    def test_a_www_mismatch_still_finds_the_icon(self):
+        self.assertEqual(
+            list(self.resolved("https://www.wide.video/app/1/", "https://wide.video/")),
+            ["https://www.wide.video/app/1/"],
+        )
+
+    def test_the_reverse_mismatch_also_works(self):
+        self.assertEqual(
+            list(self.resolved("https://autocompressor.net/", "https://www.autocompressor.net/")),
+            ["https://autocompressor.net/"],
+        )
+
+    def test_a_different_site_is_never_borrowed_from(self):
+        self.assertEqual(self.resolved("https://a.example/x", "https://b.example/"), {})
+
+    def test_the_port_is_kept_when_the_host_is_rewritten(self):
+        import favicons
+
+        self.assertEqual(
+            favicons._rewrite_host("https://example.com:8080/a?b=1", "www.example.com"),
+            "https://www.example.com:8080/a?b=1",
+        )
+
+
 class BrowserIconPaths(unittest.TestCase):
     """browsers.Browser finds the icon store next to the history database."""
 

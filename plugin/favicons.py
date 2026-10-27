@@ -61,6 +61,37 @@ def _host(url: str) -> str:
         return ""
 
 
+def _alternate_hosts(url: str) -> List[str]:
+    """The same site spelled the other way, when `www.` is the only difference.
+
+    Browsers file the icon under the page URL that loaded it, and a site that
+    redirects between `example.com` and `www.example.com` leaves the icon on one
+    spelling and the history row on the other. This is the only rewriting that
+    is safe without a table of sites: the two hosts are the same origin in
+    practice, and if no icon is filed there nothing happens.
+    """
+    host = _host(url)
+    if not host:
+        return []
+    if host.startswith("www."):
+        return [host[len("www."):]]
+    return [f"www.{host}"]
+
+
+def _rewrite_host(url: str, host: str) -> str:
+    """The URL with its host replaced, leaving path and query alone."""
+    try:
+        parts = urlsplit(url)
+    except ValueError:
+        return ""
+    if not parts.hostname:
+        return ""
+    netloc = host
+    if parts.port:
+        netloc = f"{host}:{parts.port}"
+    return parts._replace(netloc=netloc).geturl()
+
+
 def _host_ranges(url: str) -> List[Tuple[str, str]]:
     """Bounds that select every icon stored for this URL's site.
 
@@ -345,6 +376,26 @@ class FaviconStore:
             if missing:
                 for page_url, data in lookup_icons(database, chromium, [], missing).items():
                     by_host.setdefault(_host(page_url), data)
+
+            # Still nothing: the icon may be filed under the other spelling of
+            # the same site (`www.` or not). One lookup for all of them, so an
+            # iconless list still opens the icon store once.
+            unresolved = [url for url in urls if url not in known and _host(url) not in by_host]
+            if unresolved:
+                addresses = {}
+                for url in unresolved:
+                    for alternate in _alternate_hosts(url):
+                        rewritten = _rewrite_host(url, alternate)
+                        if rewritten:
+                            addresses[url] = (alternate, rewritten)
+                if addresses:
+                    found = lookup_icons(
+                        database, chromium, [], [rewritten for _alternate, rewritten in addresses.values()]
+                    )
+                    for page_url, icon in found.items():
+                        for url, (alternate, _rewritten) in addresses.items():
+                            if _host(page_url) == alternate:
+                                by_host.setdefault(_host(url), icon)
 
             for url in urls:
                 data = known.get(url) or by_host.get(_host(url))
