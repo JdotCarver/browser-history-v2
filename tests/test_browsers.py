@@ -116,5 +116,63 @@ class WriteAheadLog(unittest.TestCase):
             )
 
 
+class TornCopy(unittest.TestCase):
+    """The browser is writing while the copy is made."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self._tmp.name)
+        self.profile = self.root / "profile"
+        self.profile.mkdir()
+        self.cache = self.root / "Cache"
+        self.cache.mkdir()
+        self.database = self.profile / "History"
+        connection = sqlite3.connect(self.database)
+        connection.execute("CREATE TABLE urls(id INTEGER PRIMARY KEY, url TEXT)")
+        connection.execute("INSERT INTO urls(url) VALUES ('https://example.com/a')")
+        connection.commit()
+        connection.close()
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def test_a_torn_copy_is_taken_again(self):
+        import browsers
+
+        original = browsers.shutil.copy
+        calls = {"n": 0}
+
+        def copy(source, target):
+            calls["n"] += 1
+            if calls["n"] == 1:
+                # A database caught mid-transaction: a header, then rubbish.
+                Path(target).write_bytes(b"SQLite format 3\x00" + b"\x00" * 200)
+                return target
+            return original(source, target)
+
+        browsers.shutil.copy = copy
+        try:
+            browser = browsers.Browser(
+                name="chrome",
+                cache_dir=self.cache,
+                timestamp_type="chromium",
+                custom_path=self.profile,
+                db_file="History",
+            )
+            target = browser._copy_database()
+        finally:
+            browsers.shutil.copy = original
+
+        self.assertGreaterEqual(calls["n"], 2)
+        connection = sqlite3.connect(f"file:{target}?mode=ro", uri=True)
+        try:
+            self.assertEqual(
+                [row[0] for row in connection.execute("SELECT url FROM urls")],
+                ["https://example.com/a"],
+            )
+        finally:
+            connection.close()
+
+
 if __name__ == "__main__":
     unittest.main()

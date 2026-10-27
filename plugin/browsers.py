@@ -258,6 +258,18 @@ class Browser:
             # than not copying the log at all.
             _discard_log(target)
 
+        # The browser writes while we copy, and a file caught mid-transaction is
+        # not a database. Copying again usually lands between writes; the point
+        # is that no icon or history row is silently lost to a torn read.
+        for attempt in range(2):
+            if _readable(target):
+                break
+            time.sleep(0.02 * (attempt + 1))
+            shutil.copy(source, target)
+            self._copy_write_ahead_log(source, target)
+            if not _readable(target):
+                _discard_log(target)
+
         return str(target)
 
     @staticmethod

@@ -435,9 +435,31 @@ Two real defects found while looking:
   under the other. The lookup now tries the alternate spelling before giving up,
   which needs no table of sites -- the two hosts are the same site in practice.
 
+**Another torn-read guard**: a copy taken while the browser is mid-transaction is
+not a database, and `_select` treats an unreadable table as no rows -- silently.
+`_cache_copy` now checks the copy is readable and copies again if it is not.
+
 Chromium's favicon database does **not** use WAL (`FaviconDatabase` sets only
 page size and cache size; `sql::Database` requires `set_wal_mode(true)`), so the
-log fix is not Brave's answer. Ruled out for Brave, having read the source:
+log fix is not Brave's answer. ### What was measured on the owner's machine (2026-10-27)
+
+Both reported URLs, end to end, with the owner's own settings (Brave, All
+Profiles, `show_favicons: True`, 8 results):
+
+| step | autocompressor.net | wide.video/app/1.7.11/ |
+|---|---|---|
+| mapping row for the exact URL | yes (icon 4755) | yes (icon 4716) |
+| usable PNG bitmaps | 16 and 32 px | 16 and 32 px |
+| installed build hands Flow | `01b6a94b….png`, 1242 B, 32×32 | `0288584a….png`, 3332 B, 32×32 |
+| installed plugin's own cache | 3 entries, file present | 4 entries, file present |
+
+Every row in both searches carried an existing icon file, so the lookup, the
+copy, the filter and the hand-off all work for these two sites. What is left is
+between that valid file and the pixels on screen (Flow's drawing), or the state
+the owner saw predated the cache being filled -- `keep_history_cache` is on, so
+their cache holds whatever an older build wrote.
+
+Ruled out for Brave, having read the source:
 PNG-encoded `image_data` (so the format filter is not it), and the host-range
 fallback (an icon mapped only to the site root is found for a deeper URL --
 verified end to end).
