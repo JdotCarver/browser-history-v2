@@ -1,0 +1,34 @@
+{
+  "capture_note": "Status is captured while Export logs is still in progress; use the final workflow conclusion for that job's result.",
+  "conclusion": null,
+  "event": "push",
+  "head_branch": "arena/b80febd6-browser-history-v2",
+  "head_sha": "89a83c077e55f116bc89b82a6673c7988d5bb5e5",
+  "id": 40504012785,
+  "jobs": [
+    {
+      "conclusion": "success",
+      "id": 122188583056,
+      "name": "Select runner",
+      "status": "completed",
+      "url": "https://github.com/JdotCarver/browser-history-v2/actions/runs/40504012785/job/122188583056"
+    },
+    {
+      "conclusion": "success",
+      "id": 122188640374,
+      "name": "Tracing removed, WAL and www fixes",
+      "status": "completed",
+      "url": "https://github.com/JdotCarver/browser-history-v2/actions/runs/40504012785/job/122188640374"
+    },
+    {
+      "conclusion": null,
+      "id": 122188904827,
+      "name": "Export logs",
+      "status": "in_progress",
+      "url": "https://github.com/JdotCarver/browser-history-v2/actions/runs/40504012785/job/122188904827"
+    }
+  ],
+  "name": "Runner request",
+  "status": "in_progress",
+  "url": "https://github.com/JdotCarver/browser-history-v2/actions/runs/40504012785"
+}
