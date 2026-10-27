@@ -21,6 +21,8 @@ CI, where the log is public.
 
 from __future__ import annotations
 
+import json
+import os
 import sqlite3
 import sys
 import tempfile
@@ -181,6 +183,40 @@ def chain(icons_copy, chromium: bool, url: str, verbose: bool):
         connection.close()
 
 
+def installed_cache(urls):
+    """What the installed plugin already decided, from its own icon index.
+
+    The plugin writes one entry per URL it has an icon for, and nothing for a
+    URL it could not resolve. An entry whose file is gone is a different
+    problem from no entry at all.
+    """
+    if not urls:
+        return
+    root = Path(os.getenv("APPDATA", "")) / "FlowLauncher" / "Settings" / "Plugins"
+    if not root.is_dir():
+        return
+
+    for index_path in sorted(root.glob("*/Cache/favicons/index.json")):
+        try:
+            index = json.loads(index_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        if not isinstance(index, dict):
+            continue
+        print(f"\n=== installed plugin: {index_path.parent.parent.parent.parent.name} ===")
+        print(f"  {len(index)} addresses cached")
+        for url in urls:
+            name = index.get(url)
+            if not name:
+                print(f"  {url[:70]}\n    not in the installed plugin's cache")
+                continue
+            path = index_path.parent / name
+            if path.exists():
+                print(f"  {url[:70]}\n    cached as {name} ({path.stat().st_size} bytes)")
+            else:
+                print(f"  {url[:70]}\n    cached as {name} -- but the file is gone")
+
+
 def report(urls, limit=DEFAULT_ROWS):
     cache = Path(tempfile.mkdtemp(prefix="bh-report-"))
     any_profile = False
@@ -252,6 +288,7 @@ def report(urls, limit=DEFAULT_ROWS):
             for verdict, count in sorted(counts.items(), key=lambda item: -item[1]):
                 print(f"    {count:3d}  {verdict}")
 
+    installed_cache(urls)
     if not any_profile:
         print("No browser profiles found on this machine.")
     print(
