@@ -121,6 +121,10 @@ jobs:
           # named; no other browsing history is shown.
           & $env:PYTHON tools/favicon_report.py "https://autocompressor.net/" "https://wide.video/app/1.7.11/"
 
+      - name: What is installed
+        run: |
+          & $env:PYTHON -c "exec(open('tools/installed_listing.py').read())"
+
       - name: Per-keystroke measurement
         run: |
           # 25 results: the owner's UI depth, where rendering is not the story.
