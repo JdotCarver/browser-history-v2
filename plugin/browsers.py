@@ -71,6 +71,56 @@ def computer_name() -> str:
     return _computer_name
 
 
+WRITE_AHEAD_LOG = "-wal"
+
+
+def _log_of(database: Path) -> Path:
+    """The write-ahead log that belongs to this database, if any."""
+    return Path(str(database) + WRITE_AHEAD_LOG)
+
+
+def _newest_mtime(database: Path) -> Optional[float]:
+    """The later of a database and its log: the moment its state last changed."""
+    newest = None
+    for candidate in (database, _log_of(database)):
+        try:
+            stamp = candidate.stat().st_mtime
+        except OSError:
+            continue
+        if newest is None or stamp > newest:
+            newest = stamp
+    return newest
+
+
+def _size(path: Path) -> int:
+    """File size, or -1 when there is no file (so 'missing' never matches 0)."""
+    try:
+        return path.stat().st_size
+    except OSError:
+        return -1
+
+
+def _readable(database: Path) -> bool:
+    """Whether SQLite can open the copy and read its schema."""
+    try:
+        connection = sqlite3.connect(f"file:{database}?mode=ro", uri=True, timeout=0.5)
+    except sqlite3.Error:
+        return False
+    try:
+        connection.execute("SELECT count(*) FROM sqlite_master").fetchone()
+        return True
+    except sqlite3.Error:
+        return False
+    finally:
+        connection.close()
+
+
+def _discard_log(database: Path) -> None:
+    """Remove a copy's log and the shared-memory file SQLite keeps beside it."""
+    for suffix in (WRITE_AHEAD_LOG, WRITE_AHEAD_LOG + "-shm"):
+        Path(str(database) + suffix).unlink(missing_ok=True)
+
+
 def _get_chromium_profiles(base: Path, db_file: str) -> List[Path]:
     if not base.exists():
         return []
@@ -166,6 +216,12 @@ class Browser:
 
         The browser holds its own databases open and locked, so every read
         happens against a copy. The copy is reused until the original is newer.
+
+        "Newer" includes the write-ahead log: SQLite can keep recent writes in
+        `<database>-wal` and touch the main file only when it checkpoints, so a
+        main file alone can be hours out of date -- or, worse, identical to the
+        copy we already have, which would make the stale copy look fresh
+        forever. Both are copied together.
         """
         safe_name = self.name.replace(" ", "_")
         safe_pc = computer_name().replace(" ", "_")
@@ -177,11 +233,8 @@ class Browser:
 
         # Check if we already have a cached copy that is up to date
         try:
-            if target.exists():
-                source_mtime = source.stat().st_mtime
-                target_mtime = target.stat().st_mtime
-                if source_mtime <= target_mtime:
-                    return str(target)
+            if target.exists() and self._copy_is_fresh(source, target):
+                return str(target)
         except OSError:
             pass  # Fallback to copying if stat fails
 
@@ -198,7 +251,48 @@ class Browser:
                 f"Failed copying {kind} DB for '{self.name}' from '{source}' to '{target}': {last_err}"
             )
 
+        self._copy_write_ahead_log(source, target)
+        if not _readable(target):
+            # A log copied mid-write can be unusable; the main file alone is
+            # still the complete state as of its last checkpoint. Never worse
+            # than not copying the log at all.
+            _discard_log(target)
+
         return str(target)
+
+    @staticmethod
+    def _copy_is_fresh(source: Path, target: Path) -> bool:
+        newest = _newest_mtime(source)
+        if newest is None or newest > target.stat().st_mtime:
+            return False
+        # A log beside only one of the two files means the copy did not take
+        # the same state: recopy rather than read half of it.
+        if _log_of(source).exists() != _log_of(target).exists():
+            return False
+        # Timestamps can be coarse enough for two writes to share one tick, and
+        # then the copy would look fresh while the log has grown behind it.
+        # Sizes cannot lie about that.
+        return _size(source) == _size(target) and _size(_log_of(source)) == _size(
+            _log_of(target)
+        )
+
+    @staticmethod
+    def _copy_write_ahead_log(source: Path, target: Path) -> None:
+        source_log = _log_of(source)
+        target_log = _log_of(target)
+        if not source_log.exists():
+            # The browser has checkpointed since the last copy: carrying the
+            # old log forward would replay writes the main file already has.
+            target_log.unlink(missing_ok=True)
+            return
+        for attempt in range(3):
+            try:
+                shutil.copy(source_log, target_log)
+                return
+            except OSError:
+                time.sleep(0.05 * (attempt + 1))
+        # No usable log: read the main file rather than nothing at all.
+        target_log.unlink(missing_ok=True)
 
     def _copy_database(self) -> str:
         return self._cache_copy(self.database_path, "cache")
