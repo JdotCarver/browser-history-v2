@@ -1,0 +1,34 @@
+{
+  "capture_note": "Status is captured while Export logs is still in progress; use the final workflow conclusion for that job's result.",
+  "conclusion": null,
+  "event": "push",
+  "head_branch": "arena/b80febd6-browser-history-v2",
+  "head_sha": "5f980f41146f6b8ad0198656d9cc5dbb33fb3d05",
+  "id": 40505847364,
+  "jobs": [
+    {
+      "conclusion": "success",
+      "id": 122194830504,
+      "name": "Select runner",
+      "status": "completed",
+      "url": "https://github.com/JdotCarver/browser-history-v2/actions/runs/40505847364/job/122194830504"
+    },
+    {
+      "conclusion": "success",
+      "id": 122194900449,
+      "name": "Cached icon pixels",
+      "status": "completed",
+      "url": "https://github.com/JdotCarver/browser-history-v2/actions/runs/40505847364/job/122194900449"
+    },
+    {
+      "conclusion": null,
+      "id": 122195136201,
+      "name": "Export logs",
+      "status": "in_progress",
+      "url": "https://github.com/JdotCarver/browser-history-v2/actions/runs/40505847364/job/122195136201"
+    }
+  ],
+  "name": "Runner request",
+  "status": "in_progress",
+  "url": "https://github.com/JdotCarver/browser-history-v2/actions/runs/40505847364"
+}
