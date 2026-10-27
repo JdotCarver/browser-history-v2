@@ -1,12 +1,6 @@
 import sys
 import os
 
-# Before anything else: the origin every other timestamp is measured from.
-sys.path.insert(0, os.path.join(os.path.abspath(os.path.dirname(__file__)), "plugin"))
-from tracing import mark_process_start
-
-mark_process_start()
-
 
 def main():
     try:

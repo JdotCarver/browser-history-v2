@@ -9,7 +9,6 @@ from formatting import (
 )
 from favicons import FaviconStore
 from preview import build_preview
-from tracing import RequestTrace, process_start_mono as process_entry_mono
 from results import newest_unique, read_profiles
 import os
 import platform
@@ -28,7 +27,6 @@ IMPORTS_DONE_MONO = time.perf_counter()
 HISTORY_GLYPH = ""
 
 # Used by instances that never ran __init__ (the tests build them this way).
-NO_TRACE = RequestTrace(Path(os.devnull), enabled=False)
 CUSTOM_PROFILE = "custom profile"
 
 
@@ -38,7 +36,6 @@ class BrowserHistory(Flox):
     # __init__ (the tests do this) still renders exactly like a configured one.
     show_favicons = False
     _ready = False
-    trace = NO_TRACE
     date_display = DATE_ABSOLUTE
     time_format = TIME_12
     url_display = URL_FULL
@@ -46,7 +43,6 @@ class BrowserHistory(Flox):
 
     def __init__(self):
         super().__init__()
-        self.trace = NO_TRACE
 
         # Get the exact Flow Launcher Settings/Plugins/BrowserHistory folder
         self.cache_dir = Path(self.settings_path).parent / "Cache"
@@ -92,24 +88,12 @@ class BrowserHistory(Flox):
         ]
         self.init_error = None
 
-        # Request tracing is off unless asked for. It lives beside the settings
-        # file rather than in the cache: the cache is wiped on a machine change
-        # and aged out after a week, and a trace that vanishes is no use.
-        self.trace = RequestTrace(
-            Path(self.settings_path).parent / "requests.jsonl",
-            enabled=str(self.settings.get("trace_requests", False)).strip().lower()
-            in ("true", "1", "yes"),
-            import_mono=IMPORTS_DONE_MONO,
-            entry_mono=process_entry_mono(),
-        )
-
         # Browsers are found on the first query, not here: a context-menu
         # request never reads history, and exploring every browser's folders
         # is the single most expensive thing this plugin can do up front.
         self.browsers = []
         self._ready = False
         self.favicons = FaviconStore(self.cache_dir, [])
-        self.trace.mark("constructed")
 
 
     def _machine_marker(self):
@@ -284,18 +268,10 @@ class BrowserHistory(Flox):
         self.favicons.browsers = self.browsers
 
     def query(self, query):
-        self.trace.mark("rpc")
-        try:
-            rendered = self._render_results(query)
-        finally:
-            self.trace.mark("rendered")
-            self.trace.finish(
-                "query", flow=getattr(self, "appversion", ""), results=rendered
-            )
+        self._render_results(query)
 
     def _render_results(self, query):
         self._ensure_ready()
-        self.trace.mark("ready")
 
         if not self.browsers:
             self.add_item(
@@ -371,8 +347,6 @@ class BrowserHistory(Flox):
         return newest_unique(items, self.max_ui_results)
 
     def context_menu(self, data):
-        self.trace.mark("rpc")
-        self.trace.mark("ready")
         self.add_item(
             title="Open in browser",
             subtitle=data[0],
@@ -386,12 +360,6 @@ class BrowserHistory(Flox):
             icon=ICON_FILE,
             method=self.copy_to_clipboard,
             parameters=[data[1]],
-        )
-        self.trace.mark("rendered")
-        self.trace.finish(
-            "context_menu",
-            flow=getattr(self, "appversion", ""),
-            results=len(getattr(self, "_results", [])),
         )
 
     def copy_to_clipboard(self, data):
@@ -417,7 +385,7 @@ class BrowserHistory(Flox):
         try:
             self.call()
         except Exception:
-            # A failure here must still leave a trace and a non-zero status.
+            # A failure here must still give a non-zero status.
             traceback.print_exc()
             status = 1
         finally:

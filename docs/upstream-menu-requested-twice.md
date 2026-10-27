@@ -53,9 +53,10 @@ whole history search (79.5 ms) — even though the menu itself does 0.2 ms of wo
 
 ## Reproducing
 
-Enable the plugin's request tracing, open the context menu ~10 times, then look
-at the timestamps in `requests.jsonl`: two `context_menu` entries 100-140 ms
-apart for each press. Anything similar (a log line per RPC in the JSON-RPC host)
+A one-line timestamp log either side of each RPC in the plugin is enough: open
+the context menu ~10 times and the timestamps show two `context_menu` requests
+100-140 ms apart for each press. Anything similar (a log line per RPC in the
+JSON-RPC host) should show the same doubling. Anything similar (a log line per RPC in the JSON-RPC host)
 should show the same doubling.
 
 ## Suggestion

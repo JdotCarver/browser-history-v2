@@ -115,12 +115,6 @@ jobs:
         run: |
           & $env:PYTHON tools/perf/diagnose.py
 
-      - name: Traced session
-        run: |
-          # The instrument the owner will run against the real launcher: proves
-          # it works here, including the pre-Python part Windows can report.
-          & $env:PYTHON tools/perf/trace_session.py --max-results 25
-
       - name: Per-keystroke measurement
         run: |
           # 25 results: the owner's UI depth, where rendering is not the story.
