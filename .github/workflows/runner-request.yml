@@ -125,6 +125,10 @@ jobs:
         run: |
           & $env:PYTHON -c "exec(open('tools/installed_listing.py').read())"
 
+      - name: What the installed build returns
+        run: |
+          & $env:PYTHON tools/installed_probe.py
+
       - name: Per-keystroke measurement
         run: |
           # 25 results: the owner's UI depth, where rendering is not the story.
