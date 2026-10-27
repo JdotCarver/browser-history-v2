@@ -1,0 +1,34 @@
+{
+  "capture_note": "Status is captured while Export logs is still in progress; use the final workflow conclusion for that job's result.",
+  "conclusion": null,
+  "event": "push",
+  "head_branch": "arena/b80febd6-browser-history-v2",
+  "head_sha": "fa5aaa7325984ba58612b1c4631bf69c4f45a2f0",
+  "id": 40504202509,
+  "jobs": [
+    {
+      "conclusion": "success",
+      "id": 122189230224,
+      "name": "Select runner",
+      "status": "completed",
+      "url": "https://github.com/JdotCarver/browser-history-v2/actions/runs/40504202509/job/122189230224"
+    },
+    {
+      "conclusion": "success",
+      "id": 122189287918,
+      "name": "Favicon chain for two sites",
+      "status": "completed",
+      "url": "https://github.com/JdotCarver/browser-history-v2/actions/runs/40504202509/job/122189287918"
+    },
+    {
+      "conclusion": null,
+      "id": 122189540097,
+      "name": "Export logs",
+      "status": "in_progress",
+      "url": "https://github.com/JdotCarver/browser-history-v2/actions/runs/40504202509/job/122189540097"
+    }
+  ],
+  "name": "Runner request",
+  "status": "in_progress",
+  "url": "https://github.com/JdotCarver/browser-history-v2/actions/runs/40504202509"
+}
