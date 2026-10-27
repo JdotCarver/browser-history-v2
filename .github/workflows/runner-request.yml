@@ -115,6 +115,12 @@ jobs:
         run: |
           & $env:PYTHON tools/perf/diagnose.py
 
+      - name: Favicon chain for the two reported sites
+        run: |
+          # Read-only. Prints the icon chain for two public tool sites the owner
+          # named; no other browsing history is shown.
+          & $env:PYTHON tools/favicon_report.py "https://autocompressor.net/" "https://wide.video/app/1.7.11/"
+
       - name: Per-keystroke measurement
         run: |
           # 25 results: the owner's UI depth, where rendering is not the story.
